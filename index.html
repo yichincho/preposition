@@ -271,12 +271,83 @@ function groupView() {
     '<section class="panel" style="margin-top:12px"><h2>' + esc(info[0]) + '：' + esc(info[1]) + '</h2><div class="meaning">' + esc(info[2]) + '</div>' +
     (showCompare ? '<div class="banner"><b>' + esc(COMPARISON.title) + '</b><br>' + esc(COMPARISON.text) + '</div>' : '') +
     '<h3>小詞總覽圖 Prompt</h3><p class="sub">把「' + esc(info[0]) + '」的空間意象與語意分支整理成一張資訊圖。</p>' + promptButtons('g') + '<div id="gnotice" class="sub"></div>' +
+    (AI_ENABLED ? '<h3>AI 增加片語</h3><p class="sub">讓 AI 為「' + esc(info[0]) + '」找出資料庫還沒有的常用片語，你勾選後才會加入；加入的片語存在本機個人資料中，程式更新不會覆蓋。</p>' +
+      '<div class="row"><select id="xCount" style="width:auto"><option>5</option><option selected>10</option><option>20</option></select><button id="xGen">AI 產生新片語</button></div><div id="xOut"></div>' : '') +
     '<p class="sub">' + list.length + ' 個片語意義</p>' +
-    branches.map(b => '<h3 style="margin-top:16px">' + esc(b) + '</h3>' + list.filter(p => (p.branch || '其他') === b).map(p => '<div class="list-row"><div><b>' + esc(p.phrase) + '</b>　' + esc(p.zh) + (p.user ? ' <span class="pill">自建</span>' : '') + '<div class="sub">' + esc(p.hint) + '</div></div>' + openBtn(p) + '</div>').join('')).join('') +
+    branches.map(b => '<h3 style="margin-top:16px">' + esc(b) + '</h3>' + list.filter(p => (p.branch || '其他') === b).map(p => '<div class="list-row"><div><b>' + esc(p.phrase) + '</b>　' + esc(p.zh) + sourcePill(p) + '<div class="sub">' + esc(p.hint) + '</div></div>' + openBtn(p) + '</div>').join('')).join('') +
     '</section>';
   $('backMap').onclick = () => { state.groupOpen = false; render(); window.scrollTo(0, 0); };
   bindPromptButtons('g', () => particlePrompt(state.group), $('gnotice'));
+  if (AI_ENABLED) $('xGen').onclick = () => aiExpand(state.group, Number($('xCount').value));
   bindLinks();
+}
+
+const BRANCHES = ['空間', '時間', '狀態', '程度', '完成', '情緒', '慣用'];
+const PARTICLE_WORDS = { '(A)ROUND': [['around'], ['round']], 'OUT OF': [['out', 'of']] };
+const sourcePill = p => !p.user ? '' : p.source === 'ai' ? ' <span class="pill">AI 新增</span>' : ' <span class="pill">自建</span>';
+function particleWordOptions(group) { return PARTICLE_WORDS[group] || [[group.toLowerCase()]]; }
+function hasParticle(phrase, group) {
+  const w = phrase.split(' ');
+  return particleWordOptions(group).some(seq => { for (let i = 1; i + seq.length <= w.length; i++) if (seq.every((s, k) => w[i + k] === s)) return true; return false; });
+}
+// 檢查 AI 建議的片語；回傳 {ok:[...], skipped:[{phrase, reason}]}
+function validateSuggestions(group, items) {
+  const ok = [], skipped = [];
+  const norm = s => String(s || '').trim();
+  const seen = new Set(entries.filter(e => e.group === group).map(e => e.phrase + '|' + e.zh));
+  const seenPhrase = new Map();
+  entries.filter(e => e.group === group).forEach(e => seenPhrase.set(e.phrase, (seenPhrase.get(e.phrase) || []).concat(e.zh)));
+  for (const it of Array.isArray(items) ? items : []) {
+    const phrase = norm(it.phrase).toLowerCase().replace(/\s+/g, ' ');
+    const zh = norm(it.zh), example = norm(it.example);
+    const skip = reason => skipped.push({ phrase: phrase || '(空白)', reason });
+    if (!/^[a-z]+( [a-z]+)+$/.test(phrase)) { skip('格式不是「動詞＋小詞」'); continue; }
+    if (!hasParticle(phrase, group)) { skip('不含小詞 ' + group); continue; }
+    if (!zh || zh.length > 20) { skip('缺少中文意思'); continue; }
+    if (seen.has(phrase + '|' + zh) || (seenPhrase.get(phrase) || []).some(z => z.includes(zh) || zh.includes(z))) { skip('資料庫已有相同意思'); continue; }
+    const tmp = { id: 'x', phrase };
+    const anns = C.annotate(example, [tmp]);
+    if (!anns.some(a => a.type === 'verb') || anns.filter(a => a.type === 'particle').length !== phrase.split(' ').length - 1) { skip('例句沒有正確使用此片語'); continue; }
+    seen.add(phrase + '|' + zh);
+    seenPhrase.set(phrase, (seenPhrase.get(phrase) || []).concat(zh));
+    ok.push({ group, phrase, zh, example, hint: norm(it.hint).slice(0, 40), branch: BRANCHES.includes(it.branch) ? it.branch : '慣用', separable: !!it.separable });
+  }
+  return { ok, skipped };
+}
+async function aiExpand(group, n) {
+  const out = $('xOut');
+  out.innerHTML = '<p class="sub">AI 正在找新片語…</p>';
+  $('xGen').disabled = true;
+  try {
+    const existing = entries.filter(e => e.group === group).map(e => e.phrase + '（' + e.zh + '）').join('、');
+    const info = groupInfo(group);
+    const r = await aiChat({
+      system: '你是台灣的英語教師與詞典編輯，熟悉認知語言學。只輸出 JSON，中文用台灣繁體中文。只提供真實、常用、母語者會用的片語動詞，不要自創。',
+      user: '請為小詞「' + group + '」（' + info[1] + '；' + info[2] + '）補充 ' + n + ' 個資料庫還沒有的常用片語意義。\n資料庫已有：' + existing +
+        '\n規則：phrase 用小寫原形「動詞 小詞」（例如 "give up"），必須包含「' + particleWordOptions(group)[0].join(' ') + '」；同一片語若意思不同可再列；zh 只寫一個意思（12 字內）；hint 用 25 字內說明空間意象如何延伸到此意思；example 是 6–14 字自然英文例句，必須使用這個片語（動詞可變化、可分離片語可夾受詞）；branch 為 ' + BRANCHES.join('／') + ' 之一；separable 為是否可分離。\n輸出 JSON：{"phrases":[{"phrase":"","zh":"","hint":"","example":"","branch":"","separable":false}]}',
+    });
+    const { ok, skipped } = validateSuggestions(group, r.data && r.data.phrases);
+    state.expand = { group, items: ok, provider: r.provider, model: r.model };
+    out.innerHTML = (ok.length ? '<p>AI 建議 ' + ok.length + ' 個新片語，請勾選要加入的：</p><div class="toolbar"><button class="secondary" id="xAll">全選</button><button class="secondary" id="xNone">全不選</button></div>' +
+      ok.map((x, i) => '<label class="list-row" style="font-weight:400"><span><input type="checkbox" data-x="' + i + '" checked> <b>' + esc(x.phrase) + '</b>　' + esc(x.zh) + '<span class="pill">' + esc(x.branch) + '</span><br><span class="sub">' + esc(x.hint) + '</span><br>' + C.highlight(x.example, x.phrase) + '</span></label>').join('') +
+      '<div class="toolbar"><button id="xSave">加入選取的片語</button></div>' : '<p>這次沒有可加入的新片語，可以再試一次。</p>') +
+      (skipped.length ? '<p class="sub">已自動略過 ' + skipped.length + ' 個：' + skipped.map(s => esc(s.phrase) + '（' + esc(s.reason) + '）').join('、') + '</p>' : '') +
+      '<p class="sub">來源：' + esc(r.provider + ' / ' + r.model) + '・AI 內容請自行確認</p>';
+    if (ok.length) {
+      $('xAll').onclick = () => document.querySelectorAll('[data-x]').forEach(x => { x.checked = true; });
+      $('xNone').onclick = () => document.querySelectorAll('[data-x]').forEach(x => { x.checked = false; });
+      $('xSave').onclick = async () => {
+        const picked = [...document.querySelectorAll('[data-x]:checked')].map(x => state.expand.items[Number(x.dataset.x)]);
+        if (!picked.length) { alert('請至少勾選一個'); return; }
+        for (const x of picked) await put('phrases', { ...x, id: 'ai:' + uuid(), user: true, source: 'ai', provider: state.expand.provider, model: state.expand.model, createdAt: Date.now() });
+        await loadEntries();
+        state.expand = null;
+        groupView();
+        $('xOut').innerHTML = '<div class="banner">已加入 ' + picked.length + ' 個片語，可在下方清單、片語庫與牌卡複習中使用。</div>';
+      };
+    }
+  } catch (e) { out.innerHTML = '<div class="banner">AI 增加片語失敗：' + esc(e.message) + '</div>'; }
+  finally { const b = $('xGen'); if (b) b.disabled = false; }
 }
 
 function libraryView() {
@@ -285,7 +356,7 @@ function libraryView() {
   $('view').innerHTML =
     '<div class="row between"><h2>片語知識庫</h2><button id="newEntry">＋ 自行新增片語</button></div>' +
     '<div class="columns"><input id="search" placeholder="搜尋英文、中文或小詞" value="' + esc(state.libFilter) + '"><select id="libGroup"><option value="">全部 17 個小詞</option>' + GROUPS.map(g => '<option value="' + esc(g[0]) + '"' + (state.libGroup === g[0] ? ' selected' : '') + '>' + esc(g[0]) + '</option>').join('') + '</select></div>' +
-    '<p class="sub">共 ' + entries.length + ' 個片語意義（預載 ' + seed.length + '，自建 ' + entries.filter(x => x.user).length + '）；顯示 ' + rows.length + ' 筆。自建資料不會被程式更新覆蓋。預載資料為 AI 輔助整理，尚待人工校對。</p>' +
+    '<p class="sub">共 ' + entries.length + ' 個片語意義（預載 ' + seed.length + '，自建 ' + entries.filter(x => x.user && x.source !== 'ai').length + '，AI 新增 ' + entries.filter(x => x.source === 'ai').length + '）；顯示 ' + rows.length + ' 筆。自建資料不會被程式更新覆蓋。預載資料為 AI 輔助整理，尚待人工校對。</p>' +
     '<div class="grid">' + rows.map(p => '<article class="panel"><span class="pill">' + esc(p.group) + '</span>' + (p.branch ? '<span class="pill">' + esc(p.branch) + '</span>' : '') + '<h3>' + esc(p.phrase) + '</h3><div>' + esc(p.zh) + '</div><div class="sub">' + esc(p.hint) + '</div>' + openBtn(p) + '</article>').join('') + '</div>';
   $('search').oninput = e => { state.libFilter = e.target.value; libraryView(); const s = $('search'); s.focus(); s.setSelectionRange(s.value.length, s.value.length); };
   $('libGroup').onchange = e => { state.libGroup = e.target.value; libraryView(); };
@@ -318,7 +389,7 @@ async function detail(id) {
   const prog = await get('progress', id);
   const arts = AI_ENABLED ? (await all('articles')).filter(a => (a.phraseIds || []).includes(id)) : [];
   $('view').innerHTML = '<button class="secondary" id="back">← 返回</button><article class="panel" style="margin-top:12px">' +
-    '<span class="pill">' + esc(p.group) + '</span>' + (p.branch ? '<span class="pill">' + esc(p.branch) + '</span>' : '') + (p.separable ? '<span class="pill">可分離</span>' : '') + (p.user ? '<span class="pill">自建</span>' : '<span class="pill warn">待人工校對</span>') +
+    '<span class="pill">' + esc(p.group) + '</span>' + (p.branch ? '<span class="pill">' + esc(p.branch) + '</span>' : '') + (p.separable ? '<span class="pill">可分離</span>' : '') + (p.user ? sourcePill(p) + (p.source === 'ai' ? '<span class="pill warn">待人工校對</span>' : '') : '<span class="pill warn">待人工校對</span>') +
     '<h2>' + esc(p.phrase) + '</h2><h3>' + esc(p.zh) + '</h3><div class="meaning">' + esc(p.hint) + '</div><p>' + C.highlight(p.example, p.phrase) + '</p>' +
     '<p class="sub">複習：' + (prog ? '作答 ' + prog.attempts + ' 次、答對 ' + prog.correct + ' 次、下次 ' + (C.isDue(prog) ? '現在' : new Date(prog.due).toLocaleDateString('zh-TW')) : '尚未複習') + '</p>' +
     (AI_ENABLED ? '<div class="toolbar"><button id="aiExplain">AI 解說此片語</button></div><div id="aiOut"></div>' : '') +
@@ -527,9 +598,9 @@ async function articlesView() {
   const arts = (await all('articles')).sort((a, b) => (b.createdAt - a.createdAt) || (a.order - b.order));
   const series = [...new Map(arts.map(a => [a.seriesId, a.seriesTitle])).entries()];
   const groupEntries = entries.filter(e => e.group === state.group);
-  $('view').innerHTML = '<div class="panel"><h2>生成系列文章</h2><p class="sub">選 5–12 個目標片語，AI 先排大綱再逐篇寫作；程式用 token 位置標出動詞（紅色）與小詞（底線），沒用到的片語會標為待審核。</p>' +
+  $('view').innerHTML = '<div class="panel"><h2>生成系列文章</h2><p class="sub">選至少 5 個目標片語（每篇最多 8 個，選太多會自動增加篇數，最多 5 篇），AI 先排大綱再逐篇寫作；程式用 token 位置標出動詞（紅色）與小詞（底線），沒用到的片語會標為待審核。</p>' +
     '<label>小詞</label><select id="agroup">' + GROUPS.map(g => '<option' + (g[0] === state.group ? ' selected' : '') + '>' + esc(g[0]) + '</option>').join('') + '</select>' +
-    '<label>目標片語（已選 <span id="pickCount">0</span>）</label><div class="checks">' + groupEntries.map((e, i) => '<label><input type="checkbox" value="' + esc(e.id) + '"' + (i < 6 ? ' checked' : '') + '> ' + esc(e.phrase) + '・' + esc(e.zh) + '</label>').join('') + '</div>' +
+    '<label>目標片語（已選 <span id="pickCount">0</span>／' + groupEntries.length + '）</label><div class="toolbar"><button class="secondary" id="pickAll">全選</button><button class="secondary" id="pickNone">全不選</button></div><div class="checks">' + groupEntries.map((e, i) => '<label><input type="checkbox" value="' + esc(e.id) + '"' + (i < 6 ? ' checked' : '') + '> ' + esc(e.phrase) + '・' + esc(e.zh) + '</label>').join('') + '</div>' +
     '<div class="columns"><div><label>主題</label><input id="topic" placeholder="例：大學新生的第一學期"></div><div><label>難度</label><select id="level"><option>A2</option><option selected>B1</option><option>B2</option></select></div>' +
     '<div><label>篇數</label><select id="count"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div><div><label>每篇字數</label><select id="words"><option>120</option><option selected>200</option><option>300</option></select></div></div>' +
     '<div class="toolbar"><button id="gen">開始生成</button></div><div id="genLog" class="progress-log"></div></div>' +
@@ -537,16 +608,23 @@ async function articlesView() {
   const updateCount = () => { $('pickCount').textContent = document.querySelectorAll('.checks input:checked').length; };
   updateCount();
   document.querySelectorAll('.checks input').forEach(x => x.onchange = updateCount);
+  $('pickAll').onclick = () => { document.querySelectorAll('.checks input').forEach(x => { x.checked = true; }); updateCount(); };
+  $('pickNone').onclick = () => { document.querySelectorAll('.checks input').forEach(x => { x.checked = false; }); updateCount(); };
   $('agroup').onchange = e => { state.group = e.target.value; articlesView(); };
   document.querySelectorAll('[data-article]').forEach(x => x.onclick = () => readArticle(x.dataset.article));
   $('gen').onclick = async () => {
     const ids = [...document.querySelectorAll('.checks input:checked')].map(x => x.value);
-    if (ids.length < 5 || ids.length > 12) { alert('請選 5–12 個片語'); return; }
+    if (ids.length < 5) { alert('請至少選 5 個片語'); return; }
+    if (ids.length > MAX_PER_ARTICLE * 5) { alert('最多 ' + (MAX_PER_ARTICLE * 5) + ' 個片語（5 篇 × 每篇 ' + MAX_PER_ARTICLE + ' 個）'); return; }
+    let count = Number($('count').value);
+    const need = Math.ceil(ids.length / MAX_PER_ARTICLE);
+    if (need > count) { count = need; $('count').value = String(count); $('genLog').textContent += '片語較多，篇數自動調整為 ' + count + ' 篇。\n'; }
     $('gen').disabled = true;
-    try { await generateSeries({ ids, topic: $('topic').value.trim() || '日常生活', level: $('level').value, count: Number($('count').value), words: Number($('words').value), log: m => { const el = $('genLog'); if (el) el.textContent += m + '\n'; } }); if (state.tab === 'articles') articlesView(); }
+    try { await generateSeries({ ids, topic: $('topic').value.trim() || '日常生活', level: $('level').value, count, words: Number($('words').value), log: m => { const el = $('genLog'); if (el) el.textContent += m + '\n'; } }); if (state.tab === 'articles') articlesView(); }
     catch (e) { const el = $('genLog'); if (el) el.textContent += '失敗：' + e.message + '\n'; const g = $('gen'); if (g) g.disabled = false; else alert('文章生成失敗：' + e.message); }
   };
 }
+const MAX_PER_ARTICLE = 8;
 const phraseList = ids => ids.map(id => findEntry(id)).filter(Boolean).map(e => '- id=' + e.id + '｜' + e.phrase + '｜意思：' + e.zh).join('\n');
 const ARTICLE_SYSTEM = '你是英語閱讀教材作者，替台灣學習者寫自然的英文短文。只輸出 JSON。英文要自然、語法正確；指定片語必須用「指定的中文意思」，動詞可依時態變化，可分離片語可夾受詞。';
 
@@ -555,13 +633,14 @@ async function generateSeries({ ids, topic, level, count, words, log }) {
   const outline = await aiChat({
     system: ARTICLE_SYSTEM,
     user: '請為主題「' + topic + '」規劃 ' + count + ' 篇連續的 ' + level + ' 程度英文短文系列。目標片語：\n' + phraseList(ids) +
-      '\n每個片語至少要出現在一篇。輸出 JSON：{"series_title":"中文系列名稱","articles":[{"title":"英文標題","summary":"中文一句摘要","phrase_ids":["上方的 id"]}]}',
+      '\n每個片語至少要出現在一篇，每篇最多 ' + MAX_PER_ARTICLE + ' 個片語，平均分配。輸出 JSON：{"series_title":"中文系列名稱","articles":[{"title":"英文標題","summary":"中文一句摘要","phrase_ids":["上方的 id"]}]}',
   });
   let plan = Array.isArray(outline.data.articles) ? outline.data.articles.slice(0, count) : [];
   while (plan.length < count) plan.push({ title: topic + ' ' + (plan.length + 1), summary: '', phrase_ids: [] });
   const valid = new Set(ids);
   plan.forEach(a => { a.phrase_ids = (Array.isArray(a.phrase_ids) ? a.phrase_ids : []).filter(x => valid.has(x)); });
-  ids.forEach((id, i) => { if (!plan.some(a => a.phrase_ids.includes(id))) plan[i % plan.length].phrase_ids.push(id); });
+  plan.forEach(a => { a.phrase_ids = [...new Set(a.phrase_ids)].slice(0, MAX_PER_ARTICLE); });
+  ids.forEach(id => { if (!plan.some(a => a.phrase_ids.includes(id))) plan.reduce((m, a) => (a.phrase_ids.length < m.phrase_ids.length ? a : m), plan[0]).phrase_ids.push(id); });
   const seriesId = uuid();
   const seriesTitle = String(outline.data.series_title || topic);
   const createdAt = Date.now();
