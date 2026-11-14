@@ -23,6 +23,8 @@ const NATIVE_MOCK = () => {
   const reply = (id, o) => setTimeout(() => window.__phNative.resolve(id, JSON.stringify(o)), 20);
   window.PhraseMapNative = {
     hasKey: p => !!keys[p], clearKey: p => { delete keys[p]; }, copyText: t => { window.__copied = t; },
+    shareText: (text, pkg) => { window.__shared = { text, pkg }; return pkg ? 'direct' : 'chooser'; },
+    appVersion: () => '0.2.2 (99)',
     promptKey: (id, p) => { keys[p] = 'k'; reply(id, { ok: true }); },
     saveFile: (id, name, mime, text) => { window.__saved = { name, text }; reply(id, { ok: true }); },
     aiRequest: (id, provider, p, body) => {
@@ -82,6 +84,10 @@ const NATIVE_MOCK = () => {
   assert(!navs.includes('ai') && !navs.includes('articles'), '網頁版不顯示 AI 功能');
   await p.click('[data-group="ABOUT"]');
   assert(await p.isVisible('text=比較課：ABOUT 與 (A)ROUND'), 'ABOUT 頁面顯示比較課說明');
+  await p.evaluate(() => { window.open = (u) => { window.__opened = u; }; });
+  await p.click('#gGpt');
+  const opened = await p.evaluate(() => decodeURIComponent(window.__opened || ''));
+  assert(opened.startsWith('https://chatgpt.com/?q=') && opened.includes('小詞：ABOUT') && opened.includes('比較 ABOUT'), '網頁版：小詞總覽 Prompt 開啟 ChatGPT 並帶入文字');
   await p.click('#backMap');
   assert((await p.$$('[data-group]')).length === 17, '「← 17 個小詞」回到入口');
   await p.click('text=片語庫');
@@ -171,9 +177,21 @@ const NATIVE_MOCK = () => {
   await a.selectOption('#prov', 'GEMINI'); await a.waitForTimeout(200);
   // AI 解說
   await a.evaluate(() => detail('seed:up/give-up')); await a.waitForSelector('#aiExplain');
+  await a.click('#pGpt');
+  const sh = await a.evaluate(() => window.__shared);
+  assert(sh.pkg === 'com.openai.chatgpt' && sh.text.includes('片語：give up') && (await a.textContent('#notice')).includes('ChatGPT'), 'App：片語 Prompt 直接傳到 ChatGPT App');
+  await a.click('#pShare');
+  assert((await a.evaluate(() => window.__shared.pkg)) === '', 'App：分享到其他 App 開啟系統分享清單');
+  assert((await a.textContent('#footer')).includes('App v0.2.2 (99)'), 'App 頁尾顯示版本');
   await a.click('#aiExplain'); await a.waitForSelector('#aiToNote');
   await a.click('#aiToNote'); await a.waitForTimeout(200);
   assert((await a.evaluate(() => get('notes', 'seed:up/give-up'))).text.includes('【AI 解說】'), 'AI 解說可加入筆記');
+  // 小詞總覽 Prompt
+  await a.click('#back'); await a.click('[data-tab="map"]'); await a.click('[data-group="OUT OF"]');
+  await a.click('#gGpt');
+  const gp = await a.evaluate(() => window.__shared);
+  assert(gp.pkg === 'com.openai.chatgpt' && gp.text.includes('小詞：OUT OF') && /get out of|drop out of/.test(gp.text), 'App：小詞總覽 Prompt 含空間意象與代表片語');
+  await a.evaluate(() => detail('seed:up/give-up')); await a.waitForSelector('#note');
   // 系列文章
   await a.click('#back'); await a.click('[data-tab="articles"]');
   await a.selectOption('#agroup', 'UP'); await a.waitForSelector('.checks');

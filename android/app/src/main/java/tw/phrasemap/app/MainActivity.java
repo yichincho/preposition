@@ -148,6 +148,21 @@ public class MainActivity extends Activity {
 
  final class Bridge {
   @JavascriptInterface public boolean hasKey(String provider){return keys.has(provider);}
+  /** Shares text with the Android share sheet; with a package name, opens that app directly when installed. */
+  @JavascriptInterface public String shareText(final String text,final String pkg){
+   Intent send=new Intent(Intent.ACTION_SEND);
+   send.setType("text/plain");
+   send.putExtra(Intent.EXTRA_TEXT,text);
+   if(pkg!=null&&!pkg.isEmpty()){
+    Intent direct=new Intent(send).setPackage(pkg);
+    if(direct.resolveActivity(getPackageManager())!=null){
+     main.post(()->{try{startActivity(direct);}catch(Exception e){startActivity(Intent.createChooser(send,"分享 Prompt"));}});
+     return "direct";
+    }
+   }
+   main.post(()->{try{startActivity(Intent.createChooser(send,"分享 Prompt"));}catch(Exception ignored){}});
+   return "chooser";
+  }
   @JavascriptInterface public String appVersion(){
    try{return getPackageManager().getPackageInfo(getPackageName(),0).versionName;}catch(Exception e){return "";}
   }
