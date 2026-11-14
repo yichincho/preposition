@@ -33,6 +33,7 @@ ai-models 的 GitHub Actions 探測需在該專案 Settings → Secrets and vari
 - [開啟網頁原始檔](index.html)：17 個小詞入口、示範片語、中文四選一、翻卡、個人片語新增、圖片匯入、筆記、完整 JSON 備份與匯入。
 - 使用瀏覽器 IndexedDB 儲存使用者資料；部署更新只替換網頁程式，不會主動清空 IndexedDB。**清除網站資料、改用其他瀏覽器、或更換網址來源仍可能使資料無法讀取；請定期下載備份。**
 - 靜態部署 workflow：[.github/workflows/pages.yml](.github/workflows/pages.yml)。首次使用請在 repo Settings → Pages → Build and deployment 設為 GitHub Actions；部署狀態需自行查看 Actions。預期網址為 https://yichincho.github.io/preposition/ 。2026-11-14 的前兩次部署因 repo 尚未啟用 Pages（`Get Pages site failed: Not Found`）而失敗，啟用後需重新執行 workflow。
+- 17 個入口中的「ABOUT / (A)ROUND」標示為比較課，非獨立介系詞；**是否與《Word Power》原書目錄一致，尚待核對**。
 - 目前為原創少量示範片語；**不是** 300 或 800 筆已驗證資料庫。NVIDIA / Gemini / DeepSeek 自動文章生成與 API runtime 尚未實作。
 - 已以本機 Chromium（Playwright）測試：17 入口、片語詳情與紅字／底線標示、新增片語、筆記、圖片上傳、重新整理後保留、四選一、完整備份→清除→匯入還原、舊版 ID 遷移、手機寬度。公開網址尚未實測。
 - 預載片語使用穩定 ID（`seed:<小詞>/<片語>`），舊版 `seed-<序號>` 的筆記、圖片、紀錄與舊備份會自動遷移；啟動時會請求瀏覽器持久化儲存。
