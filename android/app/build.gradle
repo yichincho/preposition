@@ -2,7 +2,7 @@ plugins { id 'com.android.application' }
 android {
  namespace 'tw.phrasemap.app'
  compileSdk 35
- defaultConfig { applicationId 'tw.phrasemap.app'; minSdk 26; targetSdk 35; versionCode 1; versionName '0.2.0' }
+ defaultConfig { applicationId 'tw.phrasemap.app'; minSdk 26; targetSdk 35; versionCode((System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int); versionName '0.2.0' }
  // 固定簽章：每次 CI 建置都用同一把金鑰，App 才能直接覆蓋更新而不必解除安裝（解除安裝會清掉資料）。
  signingConfigs {
   stable {

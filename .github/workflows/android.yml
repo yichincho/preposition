@@ -40,18 +40,25 @@ jobs:
           cp data/phrases.js data/models.js "$www/data/"
       - name: Compile
         working-directory: android
-        run: gradle --no-daemon assembleDebug
+        env:
+          KEYSTORE_B64: ${{ secrets.PHRASEMAP_KEYSTORE_B64 }}
+          PHRASEMAP_KEYSTORE_PASSWORD: ${{ secrets.PHRASEMAP_KEYSTORE_PASSWORD }}
+          PHRASEMAP_KEY_PASSWORD: ${{ secrets.PHRASEMAP_KEYSTORE_PASSWORD }}
+        run: |
+          # 若設定了簽章 secrets 就用私人金鑰；否則用 repo 內的共用更新金鑰
+          if [ -n "$KEYSTORE_B64" ]; then echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"; export PHRASEMAP_KEYSTORE="$RUNNER_TEMP/release.keystore"; else unset PHRASEMAP_KEYSTORE_PASSWORD PHRASEMAP_KEY_PASSWORD; fi
+          gradle --no-daemon assembleRelease
       - uses: actions/upload-artifact@v4
         with:
           name: PhraseMap-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
       - name: Upload APK to release
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           version=$(grep -oP "versionName '\K[^']+" android/app/build.gradle)
-          cp android/app/build/outputs/apk/debug/app-debug.apk PhraseMap.apk
+          cp android/app/build/outputs/apk/release/app-release.apk PhraseMap.apk
           printf '%s\n' "PhraseMap 竹語 Android v${version}" "" \
             "安裝後在「AI 設定」輸入 Gemini / NVIDIA / DeepSeek API 金鑰（只加密存在手機）。" \
             "更新：直接安裝新版 APK 覆蓋即可，資料不會被清除；請勿先解除安裝。" \

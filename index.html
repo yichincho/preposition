@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#274735">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://raw.githubusercontent.com data:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>PhraseMap AI | 小詞意象學習</title>
 <style>
 :root{--paper:#f4f1e9;--green:#274735;--sage:#7a9276;--ink:#2f302a;--muted:#68736b;--line:#d4dcd1;--red:#c52b30;--card:#fffdf8}
@@ -415,8 +416,9 @@ async function quizView() {
     '</article>';
   if (quiz.mode === 'flip') {
     $('flip').onclick = () => { $('answer').classList.remove('hidden'); $('flip').disabled = true; };
-    $('self0').onclick = () => answer(false, p, true);
-    $('self1').onclick = () => answer(true, p, true);
+    const self = ok => { $('self0').disabled = $('self1').disabled = true; answer(ok, p, true); };
+    $('self0').onclick = () => self(false);
+    $('self1').onclick = () => self(true);
   } else {
     document.querySelectorAll('[data-choice]').forEach(x => x.onclick = () => {
       if (quiz.answered) return;
@@ -496,8 +498,8 @@ async function articlesView() {
     const ids = [...document.querySelectorAll('.checks input:checked')].map(x => x.value);
     if (ids.length < 5 || ids.length > 12) { alert('請選 5–12 個片語'); return; }
     $('gen').disabled = true;
-    try { await generateSeries({ ids, topic: $('topic').value.trim() || '日常生活', level: $('level').value, count: Number($('count').value), words: Number($('words').value), log: m => { $('genLog').textContent += m + '\n'; } }); articlesView(); }
-    catch (e) { $('genLog').textContent += '失敗：' + e.message + '\n'; $('gen').disabled = false; }
+    try { await generateSeries({ ids, topic: $('topic').value.trim() || '日常生活', level: $('level').value, count: Number($('count').value), words: Number($('words').value), log: m => { const el = $('genLog'); if (el) el.textContent += m + '\n'; } }); if (state.tab === 'articles') articlesView(); }
+    catch (e) { const el = $('genLog'); if (el) el.textContent += '失敗：' + e.message + '\n'; const g = $('gen'); if (g) g.disabled = false; else alert('文章生成失敗：' + e.message); }
   };
 }
 const phraseList = ids => ids.map(id => findEntry(id)).filter(Boolean).map(e => '- id=' + e.id + '｜' + e.phrase + '｜意思：' + e.zh).join('\n');

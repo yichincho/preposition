@@ -7,7 +7,7 @@
   "hint": "把手中的東西往上交出，不再握住",
   "example": "She never gave up learning English.",
   "branch": "狀態",
-  "separable": false
+  "separable": true
  },
  {
   "id": "seed:up/use-up",
@@ -203,8 +203,8 @@
   "id": "seed:up/keep-up",
   "group": "UP",
   "phrase": "keep up",
-  "zh": "保持",
-  "hint": "讓水準一直維持在高位",
+  "zh": "跟上",
+  "hint": "向上追到與前方同樣的高度與速度",
   "example": "It's hard to keep up with this fast schedule.",
   "branch": "程度",
   "separable": true
@@ -247,7 +247,7 @@
   "hint": "把話筒掛回高處收起",
   "example": "He hung up before I could explain.",
   "branch": "慣用",
-  "separable": false
+  "separable": true
  },
  {
   "id": "seed:up/dress-up",
@@ -1645,8 +1645,8 @@
   "phrase": "walk away",
   "zh": "轉身離去",
   "hint": "走向遠處，不再面對",
-  "example": "It's hard to walk away from a good job.",
-  "branch": "情緒",
+  "example": "He walked away without saying goodbye.",
+  "branch": "空間",
   "separable": false
  },
  {

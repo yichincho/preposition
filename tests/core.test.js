@@ -27,6 +27,7 @@ test('舊版 seed-<序號> 全部對應到現有 ID', () => {
   for (const [k, v] of Object.entries(legacy)) assert.ok(ids.has(v), k + ' → ' + v);
   assert.strictEqual(legacy['seed-0'], 'seed:up/give-up');
   assert.strictEqual(legacy['seed-43'], 'seed:around/look-around');
+  assert.strictEqual(legacy['seed-12'], 'seed:off/take-off~2', 'v1 take off 脫掉 = 脫下');
 });
 
 test('每個例句都能標出動詞（紅）與所有小詞（底線）', () => {

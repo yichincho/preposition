@@ -8,6 +8,7 @@
 - **網頁版**：https://yichincho.github.io/preposition/ （需先在 Settings → Pages 把 Source 設為 GitHub Actions）。不含 AI 功能。
 - **Android App**：到 [Releases → android-latest](https://github.com/yichincho/preposition/releases/tag/android-latest) 下載 `PhraseMap.apk` 安裝，在「AI 設定」輸入 Gemini／NVIDIA／DeepSeek 金鑰即可使用 AI 解說與系列文章。
 - **更新 App**：直接安裝新版 APK 覆蓋即可，資料保留；**不要先解除安裝**（解除安裝會清除 App 內所有資料）。所有版本使用同一把簽章金鑰（`android/phrasemap-update.keystore`），因此可以覆蓋安裝。
+- **簽章風險（請決定）**：repo 內的共用金鑰是公開的，任何人都能做出同簽章的 APK；若你被誘導安裝了別人做的同名 APK，它可覆蓋本 App 並讀取資料與金鑰。只從本 repo 的 Releases 下載即可避免。若想改用私人金鑰，請在**第一次安裝前**到 Settings → Secrets 設定 `PHRASEMAP_KEYSTORE_B64`（keystore base64，alias 為 `phrasemap`）與 `PHRASEMAP_KEYSTORE_PASSWORD`；之後換金鑰會導致無法覆蓋更新。
 
 ## 功能
 - 17 個小詞：IN、INTO、OUT、OUT OF、UP、DOWN、ON、OFF、OVER、AWAY、BACK、ABOUT、(A)ROUND、ACROSS、THROUGH、BY、ALONG。ABOUT／(A)ROUND 比較課放在這兩個小詞頁面中說明，不另佔入口。第 17 個小詞 OUT OF 由使用者指定；17 入口是否與《Word Power》原書目錄完全一致，**尚待核對**。

@@ -28,7 +28,8 @@ public final class SecureKeyStore {
    Cipher cipher=Cipher.getInstance("AES/GCM/NoPadding");
    cipher.init(Cipher.DECRYPT_MODE,key(provider),new GCMParameterSpec(128,Base64.decode(iv,Base64.NO_WRAP)));
    return new String(cipher.doFinal(Base64.decode(data,Base64.NO_WRAP)),StandardCharsets.UTF_8);
-  }catch(Exception invalidated){clear(provider);return "";}
+  }catch(javax.crypto.AEADBadTagException|android.security.keystore.KeyPermanentlyInvalidatedException|java.security.UnrecoverableKeyException invalidated){clear(provider);return "";}
+  catch(Exception transientError){return "";}
  }
 
  public void save(String provider,String value)throws Exception{

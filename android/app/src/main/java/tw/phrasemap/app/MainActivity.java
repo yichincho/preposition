@@ -53,6 +53,14 @@ public class MainActivity extends Activity {
   keys=new SecureKeyStore(this);
   web=new WebView(this);
   setContentView(web);
+  // Android 15 強制 edge-to-edge：留出狀態列與導覽列空間
+  web.setOnApplyWindowInsetsListener((v,insets)->{
+   if(android.os.Build.VERSION.SDK_INT>=30){
+    android.graphics.Insets i=insets.getInsets(android.view.WindowInsets.Type.systemBars()|android.view.WindowInsets.Type.ime());
+    v.setPadding(i.left,i.top,i.right,i.bottom);
+   }
+   return insets;
+  });
   WebSettings s=web.getSettings();
   s.setJavaScriptEnabled(true);
   s.setDomStorageEnabled(true);
@@ -179,6 +187,7 @@ public class MainActivity extends Activity {
      String key=keys.get(provider);
      if(key.isEmpty()){fail(id,"尚未設定 "+provider+" 金鑰，請到「AI 設定」設定");return;}
      c=(HttpURLConnection)new URL(url).openConnection();
+     c.setInstanceFollowRedirects(false); // never forward the key to another host
      int t=Math.max(5000,Math.min(timeoutMs,180000));
      c.setConnectTimeout(15000);c.setReadTimeout(t);
      c.setRequestProperty("Accept","application/json");

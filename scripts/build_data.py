@@ -21,7 +21,8 @@ BRANCHES = {'空間', '時間', '狀態', '程度', '完成', '情緒', '慣用'
 LEGACY_V1 = [
     ('UP', 'give up'), ('UP', 'use up'), ('UP', 'cheer up'), ('UP', 'set up'), ('UP', 'speed up'), ('UP', 'fill up'), ('UP', 'pick up'),
     ('OUT', 'find out'), ('OUT', 'point out'), ('OUT', 'run out of'), ('OUT', 'carry out'), ('OUT', 'leave out'),
-    ('OFF', 'take off'), ('OFF', 'switch off'), ('OFF', 'cut off'), ('OFF', 'call off'), ('OFF', 'put off'),
+    ('OFF', 'take off', 'seed:off/take-off~2')  # v1 meaning 脫掉 = 脫下 sense, not 起飛
+    , ('OFF', 'switch off'), ('OFF', 'cut off'), ('OFF', 'call off'), ('OFF', 'put off'),
     ('IN', 'join in'), ('IN', 'fill in'), ('IN', 'hand in'),
     ('INTO', 'turn into'), ('INTO', 'run into'),
     ('DOWN', 'slow down'), ('DOWN', 'calm down'), ('DOWN', 'break down'), ('DOWN', 'write down'),
@@ -77,8 +78,8 @@ def main():
         if not re.fullmatch(r'[a-z]+( [a-z]+)+', r.get('phrase', '')):
             errors.append(f'{r["id"]}: phrase format "{r.get("phrase")}"')
     legacy = {}
-    for i, (g, p) in enumerate(LEGACY_V1):
-        target = seed_id(g, p)
+    for i, item in enumerate(LEGACY_V1):
+        target = item[2] if len(item) > 2 else seed_id(item[0], item[1])
         if target not in seen:
             errors.append(f'legacy target missing: {target}')
         legacy[f'seed-{i}'] = target
