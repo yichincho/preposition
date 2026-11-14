@@ -33,6 +33,11 @@ const NATIVE_MOCK = () => {
       const user = b.contents ? b.contents[0].parts[0].text : b.messages[1].content;
       let out;
       if (user.includes('Return {"ok":true}')) out = { ok: true };
+      else if (user.includes('補充')) out = { phrases: [
+        { phrase: 'cave in', zh: '屈服', hint: '牆向內塌陷', example: 'He finally caved in to the pressure.', branch: '情緒', separable: false },
+        { phrase: 'join in', zh: '加入', hint: '', example: 'Everyone joined in the song.', branch: '空間' },
+        { phrase: 'give up', zh: '放棄', hint: '', example: 'Never give up.', branch: '慣用' },
+        { phrase: 'tune in', zh: '收看', hint: '', example: 'We watched the show.', branch: '慣用' } ] };
       else if (user.includes('規劃')) {
         const ids = [...user.matchAll(/id=(\S+)｜/g)].map(m => m[1]);
         out = { series_title: '測試系列', articles: [{ title: 'Part One', summary: '第一篇', phrase_ids: ids.slice(0, 3) }, { title: 'Part Two', summary: '第二篇', phrase_ids: ids.slice(3, 5) }] };
@@ -186,6 +191,16 @@ const NATIVE_MOCK = () => {
   await a.click('#aiExplain'); await a.waitForSelector('#aiToNote');
   await a.click('#aiToNote'); await a.waitForTimeout(200);
   assert((await a.evaluate(() => get('notes', 'seed:up/give-up'))).text.includes('【AI 解說】'), 'AI 解說可加入筆記');
+  // AI 增加片語
+  await a.click('#back'); await a.click('[data-tab="map"]'); await a.click('[data-group="IN"]');
+  await a.selectOption('#xCount', '5'); await a.click('#xGen'); await a.waitForSelector('#xSave');
+  assert(await a.$$eval('[data-x]', x => x.length) === 1 && (await a.textContent('#xOut')).includes('已自動略過 3 個'), 'AI 增加片語：重複、不含小詞、例句錯誤的建議被略過');
+  await a.click('#xSave'); await a.waitForFunction(() => /已加入 1 個片語/.test(document.getElementById('xOut')?.textContent || ''));
+  assert(await a.evaluate(() => entries.some(e => e.phrase === 'cave in' && e.source === 'ai' && e.group === 'IN' && e.id.startsWith('ai:'))), 'AI 新片語存入個人資料');
+  assert((await a.textContent('#view')).includes('AI 新增'), '小詞頁顯示「AI 新增」標籤');
+  await a.reload(); await a.waitForSelector('[data-group]');
+  assert(await a.evaluate(() => entries.some(e => e.phrase === 'cave in')), '重新開啟後 AI 新片語仍在');
+  await a.evaluate(() => detail('seed:up/give-up')); await a.waitForSelector('#note');
   // 小詞總覽 Prompt
   await a.click('#back'); await a.click('[data-tab="map"]'); await a.click('[data-group="OUT OF"]');
   await a.click('#gGpt');
@@ -213,13 +228,24 @@ const NATIVE_MOCK = () => {
   assert(edited.text.startsWith('We gave up') && edited.annotations.length >= 2, '編輯內文後重新標註');
   await a.click('#regen'); await a.waitForTimeout(400);
   assert((await a.evaluate(id => get('articles', id), first.id)).text !== edited.text, '單篇可重新生成');
+  await a.click('#back'); await a.click('[data-tab="articles"]'); await a.selectOption('#agroup', 'ALONG'); await a.waitForSelector('#pickAll');
+  await a.click('#pickNone');
+  assert(await a.textContent('#pickCount') === '0', '文章片語「全不選」');
+  await a.click('#pickAll');
+  const total = await a.$$eval('.checks input', x => x.length);
+  assert(await a.textContent('#pickCount') === String(total) && total >= 10, '文章片語「全選」');
+  await a.selectOption('#count', '1'); await a.click('#gen');
+  await a.waitForFunction(() => document.querySelectorAll('[data-article]').length === 4, null, { timeout: 10000 });
+  const along = await a.evaluate(() => all('articles'));
+  const alongArts = along.filter(x => x.phraseIds.some(id => id.startsWith('seed:along/')));
+  assert(alongArts.length === 2 && alongArts.every(x => x.phraseIds.length <= 8) && new Set(alongArts.flatMap(x => x.phraseIds)).size === total, '全選 ' + total + ' 個 → 自動改為 2 篇、每篇最多 8 個、全部分配');
   await a.evaluate(() => detail('seed:up/give-up')); await a.waitForSelector('#note');
   // 備份走原生儲存，且不含金鑰
   await a.click('#back'); await a.click('text=備份／匯入'); await a.click('#export');
   await a.waitForFunction(() => window.__saved);
   const saved = await a.evaluate(() => window.__saved);
   const obj = JSON.parse(saved.text);
-  assert(obj.version === 3 && obj.stores.articles.length === 2 && !/"k"|apiKey/.test(saved.text), '原生儲存備份（含文章、不含金鑰）');
+  assert(obj.version === 3 && obj.stores.articles.length === 4 && obj.stores.phrases.some(x => x.source === 'ai') && !/"k"|apiKey/.test(saved.text), '原生儲存備份（含文章、不含金鑰）');
   await actx.close();
   assert(errs.length === 0, '沒有頁面錯誤' + (errs.length ? '：' + errs.join(' | ') : ''));
   await b.close(); srv.close();
