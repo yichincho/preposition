@@ -93,6 +93,8 @@ const NATIVE_MOCK = () => {
   await p.click('#gGpt');
   const opened = await p.evaluate(() => decodeURIComponent(window.__opened || ''));
   assert(opened.startsWith('https://chatgpt.com/?q=') && opened.includes('小詞：ABOUT') && opened.includes('比較 ABOUT'), '網頁版：小詞總覽 Prompt 開啟 ChatGPT 並帶入文字');
+  const heads = await p.$$eval('#view h3', x => x.map(h => h.textContent));
+  assert(heads.some(h => /^(空間|時間|狀態|程度|完成|情緒|慣用) （\d+）$/.test(h)), '語意分類標題顯示片語數');
   await p.click('#backMap');
   assert((await p.$$('[data-group]')).length === 17, '「← 17 個小詞」回到入口');
   await p.click('text=片語庫');
