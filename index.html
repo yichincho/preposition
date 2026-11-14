@@ -270,10 +270,12 @@ function groupView() {
   $('view').innerHTML = '<button class="secondary" id="backMap">← 17 個小詞</button>' +
     '<section class="panel" style="margin-top:12px"><h2>' + esc(info[0]) + '：' + esc(info[1]) + '</h2><div class="meaning">' + esc(info[2]) + '</div>' +
     (showCompare ? '<div class="banner"><b>' + esc(COMPARISON.title) + '</b><br>' + esc(COMPARISON.text) + '</div>' : '') +
+    '<h3>小詞總覽圖 Prompt</h3><p class="sub">把「' + esc(info[0]) + '」的空間意象與語意分支整理成一張資訊圖。</p>' + promptButtons('g') + '<div id="gnotice" class="sub"></div>' +
     '<p class="sub">' + list.length + ' 個片語意義</p>' +
     branches.map(b => '<h3 style="margin-top:16px">' + esc(b) + '</h3>' + list.filter(p => (p.branch || '其他') === b).map(p => '<div class="list-row"><div><b>' + esc(p.phrase) + '</b>　' + esc(p.zh) + (p.user ? ' <span class="pill">自建</span>' : '') + '<div class="sub">' + esc(p.hint) + '</div></div>' + openBtn(p) + '</div>').join('')).join('') +
     '</section>';
   $('backMap').onclick = () => { state.groupOpen = false; render(); window.scrollTo(0, 0); };
+  bindPromptButtons('g', () => particlePrompt(state.group), $('gnotice'));
   bindLinks();
 }
 
@@ -321,14 +323,14 @@ async function detail(id) {
     '<p class="sub">複習：' + (prog ? '作答 ' + prog.attempts + ' 次、答對 ' + prog.correct + ' 次、下次 ' + (C.isDue(prog) ? '現在' : new Date(prog.due).toLocaleDateString('zh-TW')) : '尚未複習') + '</p>' +
     (AI_ENABLED ? '<div class="toolbar"><button id="aiExplain">AI 解說此片語</button></div><div id="aiOut"></div>' : '') +
     '<div class="columns"><section><h3>個人筆記</h3><textarea id="note" rows="5" placeholder="自己理解的空間畫面與例句">' + esc(note?.text || '') + '</textarea><button id="saveNote">儲存筆記</button>' +
-    '<h3>生成教學圖片提示詞</h3><p class="sub">複製到圖像工具產生圖片後，再上傳回來。</p><button class="secondary" id="prompt">複製中國竹風 Prompt</button><div id="notice" class="sub"></div></section>' +
+    '<h3>生成教學圖片提示詞</h3><p class="sub">中國竹風 Prompt：傳到 ChatGPT 產生圖片後，再上傳回來。</p>' + promptButtons('p') + '<div id="notice" class="sub"></div></section>' +
     '<section><h3>我的圖片（' + imgs.length + '）</h3><input id="upload" type="file" accept="image/png,image/jpeg,image/webp"><div class="grid" id="photos">' +
     imgs.map(m => '<div><img class="thumb" src="' + URL.createObjectURL(m.blob) + '" alt="個人記憶圖"><button class="secondary" data-remove="' + esc(m.id) + '">刪除此圖片</button></div>').join('') + '</div></section></div>' +
     (arts.length ? '<h3>使用此片語的文章</h3>' + arts.map(a => '<div class="list-row"><span>' + esc(a.title) + '</span><button class="secondary" data-article="' + esc(a.id) + '">閱讀</button></div>').join('') : '') +
     (p.user ? '<div class="toolbar"><button class="secondary" id="deleteEntry">刪除個人片語（連同筆記與圖片）</button></div>' : '') + '</article>';
   $('back').onclick = render;
   $('saveNote').onclick = async () => { await put('notes', { id, text: $('note').value, updatedAt: Date.now() }); $('notice').textContent = '筆記已儲存'; };
-  $('prompt').onclick = () => copyText(imagePrompt(p), $('notice'));
+  bindPromptButtons('p', () => imagePrompt(p), $('notice'));
   $('upload').onchange = async e => {
     const f = e.target.files[0];
     if (!f) return;
@@ -349,6 +351,41 @@ async function detail(id) {
 function imagePrompt(p) {
   return '請製作繁體中文英文片語認知資訊圖。片語：' + p.phrase + '；意思：' + p.zh + '；核心小詞：' + p.group + '（' + groupInfo(p.group)[1] + '）；語意分支：' + (p.branch || '') + '。意象：' + (p.hint || '') + '。例句：' + (p.example || '') +
     '。用「起始 → 變化 → 結果」呈現空間到抽象語意。採 editorial-infographic-tw：米白紙張 #F4F1E9、深墨綠 #274735、灰綠 #7A9276，搭配節制的中國竹葉水墨裝飾、清晰繁體字、雜誌式排版、留白、正確英文拼字，避免霓虹與重複卡框。';
+}
+const STYLE_PROMPT = '採 editorial-infographic-tw：米白紙張 #F4F1E9、深墨綠 #274735、灰綠 #7A9276，搭配節制的中國竹葉水墨裝飾、清晰繁體字、雜誌式排版、留白、正確英文拼字，避免霓虹與重複卡框。';
+function particlePrompt(group) {
+  const info = groupInfo(group);
+  const list = entries.filter(p => p.group === group);
+  const branches = [...new Set(list.map(p => p.branch || '其他'))];
+  const samples = branches.map(b => b + '：' + list.filter(p => (p.branch || '其他') === b).slice(0, 3).map(p => p.phrase + '（' + p.zh + '）').join('、')).join('；');
+  const compare = (group === 'ABOUT' || group === '(A)ROUND') ? '另以小欄位比較 ABOUT（無固定路徑、四處分散）與 (A)ROUND（環繞、轉向）。' : '';
+  return '請製作一張繁體中文的英文小詞認知總覽資訊圖。小詞：' + info[0] + '（' + info[1] + '）。核心空間意象：' + info[2] +
+    ' 版面：中央畫出這個小詞最具體的空間畫面（用簡單人物與箭頭），向外延伸到各語意分支，每個分支放 2–3 個片語與中文意思；片語中的動詞用紅色、小詞加底線。語意分支與片語：' + samples + '。' + compare + STYLE_PROMPT;
+}
+function promptButtons(prefix) {
+  return '<div class="toolbar"><button id="' + prefix + 'Gpt">傳到 ChatGPT</button><button class="secondary" id="' + prefix + 'Share">分享到其他 App</button><button class="secondary" id="' + prefix + 'Copy">複製</button></div>';
+}
+function bindPromptButtons(prefix, makeText, out) {
+  $(prefix + 'Gpt').onclick = () => sendToChatGpt(makeText(), out);
+  $(prefix + 'Share').onclick = () => shareText(makeText(), out);
+  $(prefix + 'Copy').onclick = () => copyText(makeText(), out);
+}
+const CHATGPT_PACKAGE = 'com.openai.chatgpt';
+async function sendToChatGpt(text, out) {
+  if (NATIVE && NATIVE.shareText) {
+    const r = NATIVE.shareText(text, CHATGPT_PACKAGE);
+    out.textContent = r === 'direct' ? '已開啟 ChatGPT，Prompt 已帶入' : '找不到 ChatGPT App，請在分享清單中選擇';
+    return;
+  }
+  // 先開分頁（必須在點擊當下同步呼叫，否則會被彈出視窗阻擋），再複製備用
+  window.open('https://chatgpt.com/?q=' + encodeURIComponent(text), '_blank', 'noopener');
+  try { navigator.clipboard.writeText(text).catch(() => {}); } catch {}
+  out.textContent = '已開啟 ChatGPT（Prompt 也已複製，若沒自動帶入請貼上）';
+}
+async function shareText(text, out) {
+  if (NATIVE && NATIVE.shareText) { NATIVE.shareText(text, ''); out.textContent = '請選擇要分享的 App'; return; }
+  if (navigator.share) { try { await navigator.share({ text }); out.textContent = '已分享'; return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  copyText(text, out);
 }
 async function copyText(text, out) {
   try {
