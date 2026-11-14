@@ -28,3 +28,11 @@ ai-models 的 GitHub Actions 探測需在該專案 Settings → Secrets and vari
 
 ## 本次交付
 此儲存庫先建立可供 Codex / Claude Code 實作的需求規格，尚未完成應用程式、部署、圖片產生或 API 真實測試。
+## 已提交的第一版 MVP（2026-11-14）
+
+- [開啟網頁原始檔](index.html)：17 個小詞入口、示範片語、中文四選一、翻卡、個人片語新增、圖片匯入、筆記、完整 JSON 備份與匯入。
+- 使用瀏覽器 IndexedDB 儲存使用者資料；部署更新只替換網頁程式，不會主動清空 IndexedDB。**清除網站資料、改用其他瀏覽器、或更換網址來源仍可能使資料無法讀取；請定期下載備份。**
+- 靜態部署 workflow：[.github/workflows/pages.yml](.github/workflows/pages.yml)。首次使用請在 repo Settings → Pages → Build and deployment 設為 GitHub Actions；部署狀態需自行查看 Actions。預期網址為 https://yichincho.github.io/preposition/ ，**未驗證公開網址已可開啟**。
+- 目前為原創少量示範片語；**不是** 300 或 800 筆已驗證資料庫。NVIDIA / Gemini / DeepSeek 自動文章生成與 API runtime 尚未實作。
+- 目前無法在此環境完成實際瀏覽器端到端測試，建議先測試備份／匯入與更新後圖片保留，再作正式使用。
+
