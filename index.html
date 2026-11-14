@@ -19,6 +19,7 @@ button,.button{font:inherit;cursor:pointer;border:1px solid var(--green);border-
 button:hover{filter:brightness(1.1)}button:disabled{opacity:.45;cursor:not-allowed}
 .secondary{background:transparent;color:var(--green)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:12px}
+.tiles{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.tiles .tile{padding:14px}
 .panel,.tile{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:19px;box-shadow:0 3px 12px #2747350a}
 .tile{cursor:pointer;text-align:left;color:var(--ink)}.tile strong{font-size:1.45rem;color:var(--green)}.tile span{display:block}.tile:hover,.tile.selected{border-color:var(--green)}
 .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}
@@ -52,7 +53,7 @@ footer{color:var(--muted);text-align:center;padding:20px}footer a{color:var(--gr
 </head>
 <body>
 <header>
-  <div><h1>竹語 · PhraseMap AI <span class="bamboo">𖥧</span></h1><div class="sub">從空間意象，理解英文片語</div></div>
+  <div><h1>竹語 · PhraseMap AI <span class="bamboo">🎋</span></h1><div class="sub">從空間意象，理解英文片語</div></div>
   <span class="small">資料保存在此裝置 · 更新程式不清空資料</span>
 </header>
 <main><nav class="tabs" id="nav"></nav><div id="view"></div></main>
@@ -99,7 +100,7 @@ const STORES = ['phrases', 'media', 'progress', 'notes', 'meta', 'articles', 'se
 const seed = (window.PHRASEMAP_SEED || []).map(r => ({ ...r, user: false }));
 let db;
 let entries = [];
-const state = { tab: 'map', group: 'UP', quiz: null, libFilter: '', libGroup: '' };
+const state = { tab: 'map', groupOpen: false, group: 'UP', quiz: null, libFilter: '', libGroup: '' };
 
 function openDB() {
   return new Promise((ok, no) => {
@@ -245,7 +246,7 @@ function nav() {
   if (AI_ENABLED) names.push(['articles', 'AI 文章'], ['ai', 'AI 設定']);
   names.push(['backup', '備份／匯入']);
   $('nav').innerHTML = names.map(x => '<button class="' + (state.tab === x[0] ? 'active' : '') + '" data-tab="' + x[0] + '">' + x[1] + '</button>').join('');
-  document.querySelectorAll('[data-tab]').forEach(x => x.onclick = () => { state.tab = x.dataset.tab; render(); });
+  document.querySelectorAll('[data-tab]').forEach(x => x.onclick = () => { if (x.dataset.tab === 'map') state.groupOpen = false; state.tab = x.dataset.tab; render(); });
 }
 function render() {
   nav();
@@ -255,18 +256,24 @@ const openBtn = p => '<button class="secondary" data-open="' + esc(p.id) + '">�
 function bindLinks() { document.querySelectorAll('[data-open]').forEach(x => x.onclick = () => detail(x.dataset.open)); }
 
 function mapView() {
+  if (state.groupOpen) return groupView();
+  $('view').innerHTML =
+    '<section class="hero"><h2>17 個核心小詞</h2><p class="sub">點選小詞查看「空間 → 時間／狀態 → 抽象語意」的片語。認知解釋為原創教學聯想，非原書全文。</p></section>' +
+    '<div class="grid tiles">' + GROUPS.map(g => '<button class="tile" data-group="' + esc(g[0]) + '"><strong>' + esc(g[0]) + '</strong><span>' + esc(g[1]) + '</span><span class="sub">' + entries.filter(x => x.group === g[0]).length + ' 個片語意義</span></button>').join('') + '</div>';
+  document.querySelectorAll('[data-group]').forEach(x => x.onclick = () => { state.group = x.dataset.group; state.groupOpen = true; render(); window.scrollTo(0, 0); });
+}
+function groupView() {
   const list = entries.filter(p => p.group === state.group);
   const info = groupInfo(state.group);
   const branches = [...new Set(list.map(p => p.branch || '其他'))];
   const showCompare = state.group === 'ABOUT' || state.group === '(A)ROUND';
-  $('view').innerHTML =
-    '<section class="hero"><h2>17 個核心小詞</h2><p class="sub">從「空間 → 時間／狀態 → 抽象語意」建立記憶路徑。認知解釋為原創教學聯想，非原書全文。</p></section>' +
-    '<div class="grid">' + GROUPS.map(g => '<button class="tile' + (g[0] === state.group ? ' selected' : '') + '" data-group="' + esc(g[0]) + '"><strong>' + esc(g[0]) + '</strong><span>' + esc(g[1]) + '</span><span class="sub">' + entries.filter(x => x.group === g[0]).length + ' 個片語意義</span></button>').join('') + '</div>' +
-    '<section class="panel" style="margin-top:16px"><h2>' + esc(info[0]) + '：' + esc(info[1]) + '</h2><div class="meaning">' + esc(info[2]) + '</div>' +
+  $('view').innerHTML = '<button class="secondary" id="backMap">← 17 個小詞</button>' +
+    '<section class="panel" style="margin-top:12px"><h2>' + esc(info[0]) + '：' + esc(info[1]) + '</h2><div class="meaning">' + esc(info[2]) + '</div>' +
     (showCompare ? '<div class="banner"><b>' + esc(COMPARISON.title) + '</b><br>' + esc(COMPARISON.text) + '</div>' : '') +
+    '<p class="sub">' + list.length + ' 個片語意義</p>' +
     branches.map(b => '<h3 style="margin-top:16px">' + esc(b) + '</h3>' + list.filter(p => (p.branch || '其他') === b).map(p => '<div class="list-row"><div><b>' + esc(p.phrase) + '</b>　' + esc(p.zh) + (p.user ? ' <span class="pill">自建</span>' : '') + '<div class="sub">' + esc(p.hint) + '</div></div>' + openBtn(p) + '</div>').join('')).join('') +
     '</section>';
-  document.querySelectorAll('[data-group]').forEach(x => x.onclick = () => { state.group = x.dataset.group; render(); });
+  $('backMap').onclick = () => { state.groupOpen = false; render(); window.scrollTo(0, 0); };
   bindLinks();
 }
 
@@ -303,6 +310,7 @@ function addEntry() {
 async function detail(id) {
   const p = findEntry(id);
   if (!p) return;
+  window.scrollTo(0, 0);
   const imgs = (await all('media')).filter(m => m.phraseId === id);
   const note = await get('notes', id);
   const prog = await get('progress', id);
