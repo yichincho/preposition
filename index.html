@@ -274,7 +274,7 @@ function groupView() {
     (AI_ENABLED ? '<h3>AI 增加片語</h3><p class="sub">讓 AI 為「' + esc(info[0]) + '」找出資料庫還沒有的常用片語，你勾選後才會加入；加入的片語存在本機個人資料中，程式更新不會覆蓋。</p>' +
       '<div class="row"><select id="xCount" style="width:auto"><option>5</option><option selected>10</option><option>20</option></select><button id="xGen">AI 產生新片語</button></div><div id="xOut"></div>' : '') +
     '<p class="sub">' + list.length + ' 個片語意義</p>' +
-    branches.map(b => '<h3 style="margin-top:16px">' + esc(b) + '</h3>' + list.filter(p => (p.branch || '其他') === b).map(p => '<div class="list-row"><div><b>' + esc(p.phrase) + '</b>　' + esc(p.zh) + sourcePill(p) + '<div class="sub">' + esc(p.hint) + '</div></div>' + openBtn(p) + '</div>').join('')).join('') +
+    branches.map(b => '<h3 style="margin-top:16px">' + esc(b) + ' <span class="sub">（' + list.filter(p => (p.branch || '其他') === b).length + '）</span></h3>' + list.filter(p => (p.branch || '其他') === b).map(p => '<div class="list-row"><div><b>' + esc(p.phrase) + '</b>　' + esc(p.zh) + sourcePill(p) + '<div class="sub">' + esc(p.hint) + '</div></div>' + openBtn(p) + '</div>').join('')).join('') +
     '</section>';
   $('backMap').onclick = () => { state.groupOpen = false; render(); window.scrollTo(0, 0); };
   bindPromptButtons('g', () => particlePrompt(state.group), $('gnotice'));
