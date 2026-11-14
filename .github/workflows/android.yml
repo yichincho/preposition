@@ -57,9 +57,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          version=$(grep -oP "versionName '\K[^']+" android/app/build.gradle)
+          base=$(grep -oP "APP_VERSION = '\K[^']+" android/app/build.gradle)
+          test -n "$base"
+          version="${base} (${GITHUB_RUN_NUMBER})"
           cp android/app/build/outputs/apk/release/app-release.apk PhraseMap.apk
-          printf '%s\n' "PhraseMap 竹語 Android v${version}" "" \
+          changes=$(awk '/^## /{n++} n==1' CHANGELOG.md)
+          printf '%s\n' "PhraseMap 竹語 Android v${version}" "" "$changes" "" \
             "安裝後在「AI 設定」輸入 Gemini / NVIDIA / DeepSeek API 金鑰（只加密存在手機）。" \
             "更新：直接安裝新版 APK 覆蓋即可，資料不會被清除；請勿先解除安裝。" \
             "" "Build source: https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" > /tmp/notes.txt

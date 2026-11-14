@@ -1,8 +1,11 @@
 plugins { id 'com.android.application' }
+// 發布新版時只改這一行；CI 的建置編號會自動加在後面，例如 0.2.1 (8)
+def APP_VERSION = '0.2.1'
+def BUILD_NUMBER = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int
 android {
  namespace 'tw.phrasemap.app'
  compileSdk 35
- defaultConfig { applicationId 'tw.phrasemap.app'; minSdk 26; targetSdk 35; versionCode((System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int); versionName '0.2.0' }
+ defaultConfig { applicationId 'tw.phrasemap.app'; minSdk 26; targetSdk 35; versionCode BUILD_NUMBER; versionName "${APP_VERSION} (${BUILD_NUMBER})" }
  // 固定簽章：每次 CI 建置都用同一把金鑰，App 才能直接覆蓋更新而不必解除安裝（解除安裝會清掉資料）。
  signingConfigs {
   stable {

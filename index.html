@@ -647,6 +647,7 @@ async function backupView() {
     await migrateLegacyIds();
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     await loadEntries();
+    if (AI_ENABLED && NATIVE.appVersion) { try { const v = NATIVE.appVersion(); if (v) $('footer').textContent += ' · App v' + v; } catch {} }
     if (!AI_ENABLED) $('footer').innerHTML += ' · <a href="https://github.com/yichincho/preposition/releases/tag/android-latest">下載 Android App</a>';
     render();
   } catch (e) {

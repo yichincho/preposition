@@ -148,6 +148,9 @@ public class MainActivity extends Activity {
 
  final class Bridge {
   @JavascriptInterface public boolean hasKey(String provider){return keys.has(provider);}
+  @JavascriptInterface public String appVersion(){
+   try{return getPackageManager().getPackageInfo(getPackageName(),0).versionName;}catch(Exception e){return "";}
+  }
   @JavascriptInterface public void clearKey(String provider){keys.clear(provider);}
   @JavascriptInterface public void copyText(String text){
    ClipboardManager cm=(ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
