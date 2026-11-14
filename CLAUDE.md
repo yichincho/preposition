@@ -1,6 +1,6 @@
 # PhraseMap AI — 開發代理指引
 
-請先讀 `docs/PRODUCT_REQUIREMENTS.md`，以其 P0／驗收條件優先；本 repo 目前是規劃階段，不可自稱已有可運作 APP。
+請先讀 `docs/PRODUCT_REQUIREMENTS.md`，以其 P0／驗收條件優先；本 repo 已有單檔網頁 MVP（`index.html`，IndexedDB）；不可宣稱已完成 300 筆資料、AI 呼叫或文章生成。預載片語 ID 必須穩定（`seed:<group>/<phrase>`），不可改用陣列序號。
 
 ## 不可違反
 1. 不刪除／重建使用者資料：資料庫、圖片、牌卡、個人片語、筆記、文章、複習紀錄、API 設定都必須獨立於可替換的程式碼；升級要備份 + migration + 回歸測試；禁止 `docker compose down -v`。
