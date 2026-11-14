@@ -159,6 +159,13 @@ const NATIVE_MOCK = () => {
   // 小詞意象圖：直接在意象地圖的小詞頁上傳（多張），不經 AI
   await p.setInputFiles('#gUpload', [pngPath, pngPath]); await p.waitForFunction(() => document.querySelectorAll('[data-gremove]').length === 2);
   assert((await p.textContent('#view')).includes('小詞意象圖（2）'), '小詞頁一次上傳 2 張小詞意象圖');
+  // WebP：一般 WebP 與「類型空白、只有副檔名」的 WebP 都要能上傳
+  const webp = Buffer.from('UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==', 'base64');
+  await p.setInputFiles('#gUpload', [{ name: 'chatgpt.webp', mimeType: 'image/webp', buffer: webp }, { name: 'notype.webp', mimeType: '', buffer: webp }]);
+  await p.waitForFunction(() => document.querySelectorAll('[data-gremove]').length === 4);
+  const types = await p.evaluate(async () => (await all('media')).filter(m => /\.webp$/.test(m.name)).map(m => m.blob.type));
+  assert(types.length === 2 && types.every(t => t === 'image/webp'), 'WebP 可直接上傳（含類型空白的 .webp）');
+  for (let i = 0; i < 2; i++) { await p.click('[data-gremove]'); await p.waitForFunction(n => document.querySelectorAll('[data-gremove]').length === n, 3 - i); }
   await p.reload(); await p.click('[data-group="INTO"]'); await p.waitForSelector('[data-gremove]');
   assert((await p.$$('[data-gremove]')).length === 2, '重新開啟後小詞意象圖仍在');
   await p.click('[data-tab="images"]'); await p.waitForSelector('#imgGroup');
