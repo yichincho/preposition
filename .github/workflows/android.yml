@@ -1,0 +1,64 @@
+name: Android build & APK release
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Test data, core logic and AI endpoint rules
+        run: |
+          node --test tests/core.test.js
+          mkdir -p /tmp/pm-tests
+          javac -d /tmp/pm-tests android/app/src/main/java/tw/phrasemap/app/AiEndpoints.java android/tests/AiEndpointsTest.java
+          java -cp /tmp/pm-tests AiEndpointsTest
+      - name: Install Android SDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
+      - name: Bundle web app into APK assets
+        run: |
+          www=android/app/src/main/assets/www
+          rm -rf "$www" && mkdir -p "$www/js" "$www/data"
+          cp index.html "$www/"
+          cp js/core.js "$www/js/"
+          cp data/phrases.js data/models.js "$www/data/"
+      - name: Compile
+        working-directory: android
+        run: gradle --no-daemon assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PhraseMap-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload APK to release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(grep -oP "versionName '\K[^']+" android/app/build.gradle)
+          cp android/app/build/outputs/apk/debug/app-debug.apk PhraseMap.apk
+          printf '%s\n' "PhraseMap 竹語 Android v${version}" "" \
+            "安裝後在「AI 設定」輸入 Gemini / NVIDIA / DeepSeek API 金鑰（只加密存在手機）。" \
+            "更新：直接安裝新版 APK 覆蓋即可，資料不會被清除；請勿先解除安裝。" \
+            "" "Build source: https://github.com/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" > /tmp/notes.txt
+          if gh release view android-latest >/dev/null 2>&1; then
+            gh release upload android-latest PhraseMap.apk --clobber
+            gh release edit android-latest --title "PhraseMap Android v${version}" --notes-file /tmp/notes.txt
+          else
+            gh release create android-latest PhraseMap.apk --prerelease --title "PhraseMap Android v${version}" --notes-file /tmp/notes.txt
+          fi

@@ -1,0 +1,146 @@
+// Bundled fallback of https://raw.githubusercontent.com/yichincho/ai-models/main/models.json
+window.PHRASEMAP_MODELS={
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-14",
+  "providers": {
+    "GEMINI": {
+      "label": "Gemini",
+      "format": "gemini",
+      "baseUrl": "https://generativelanguage.googleapis.com",
+      "keyEnv": "GEMINI_API_KEY",
+      "discover": [
+        "flash",
+        "gemma"
+      ],
+      "recommended": "gemini-3.8-flash",
+      "models": [
+        {
+          "id": "gemini-3.8-flash",
+          "note": "Current primary Flash model on Google AI Studio Free tier",
+          "status": "unknown"
+        },
+        {
+          "id": "gemini-3.6-flash",
+          "note": "Stable GA Flash model",
+          "status": "unknown"
+        },
+        {
+          "id": "gemini-3.5-flash-lite",
+          "note": "High-efficiency, low-latency free tier",
+          "status": "unknown"
+        },
+        {
+          "id": "gemini-flash-latest",
+          "note": "Alias pointer to latest stable flash",
+          "status": "unknown"
+        },
+        {
+          "id": "gemini-3.1-flash-lite",
+          "status": "unknown"
+        },
+        {
+          "id": "gemini-3-flash-preview",
+          "status": "unknown"
+        },
+        {
+          "id": "gemma-4-31b-it",
+          "note": "Google open-weights 31B instruction-tuned",
+          "status": "unknown"
+        },
+        {
+          "id": "gemini-3.7-flash",
+          "note": "Deprecated: auto-routed to gemini-3.8-flash",
+          "status": "unknown"
+        }
+      ]
+    },
+    "NVIDIA": {
+      "label": "NVIDIA",
+      "format": "openai",
+      "baseUrl": "https://integrate.api.nvidia.com/v1",
+      "keyEnv": "NVIDIA_API_KEY",
+      "discover": [
+        "deepseek-ai/deepseek-v",
+        "z-ai/glm-",
+        "nvidia/nemotron-3",
+        "minimaxai/minimax-m",
+        "mistralai/mistral-large",
+        "stepfun-ai/step-",
+        "moonshotai/kimi-"
+      ],
+      "recommended": "deepseek-ai/deepseek-v4.1-flash",
+      "models": [
+        {
+          "id": "deepseek-ai/deepseek-v4.1-flash",
+          "note": "Active Free Endpoint on build.nvidia.com",
+          "status": "unknown"
+        },
+        {
+          "id": "z-ai/glm-5.3-flash",
+          "note": "Active Free Endpoint; fast chat & code",
+          "status": "unknown"
+        },
+        {
+          "id": "minimaxai/minimax-m3.1-flash",
+          "note": "Active Free Endpoint verified in Nov 2026",
+          "status": "unknown"
+        },
+        {
+          "id": "nvidia/nemotron-3-ultra-550b-a55b",
+          "note": "Active Free Endpoint flagship reasoning",
+          "status": "unknown"
+        },
+        {
+          "id": "nvidia/nemotron-3.5-lightning-30b-a3b",
+          "note": "Active Free Endpoint fast agent model",
+          "status": "unknown"
+        },
+        {
+          "id": "google/gemma-4-31b-it",
+          "note": "Active Free Endpoint",
+          "status": "unknown"
+        },
+        {
+          "id": "openai/gpt-oss-20b",
+          "note": "Active Free Endpoint open-weights",
+          "status": "unknown"
+        },
+        {
+          "id": "mistralai/mistral-large-4-1t-a52b",
+          "note": "Active Free Endpoint Mistral flagship",
+          "status": "unknown"
+        },
+        {
+          "id": "stepfun-ai/step-5-preview",
+          "note": "Active Free Endpoint StepFun 600B preview",
+          "status": "unknown"
+        },
+        {
+          "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+          "note": "Active Free Endpoint nano reasoning",
+          "status": "unknown"
+        }
+      ]
+    },
+    "DEEPSEEK": {
+      "label": "DeepSeek",
+      "format": "openai",
+      "baseUrl": "https://api.deepseek.com",
+      "keyEnv": "DEEPSEEK_API_KEY",
+      "discover": [
+        "deepseek-"
+      ],
+      "recommended": "deepseek-flash",
+      "models": [
+        {
+          "id": "deepseek-flash",
+          "status": "unknown"
+        },
+        {
+          "id": "deepseek-v4-pro",
+          "status": "unknown"
+        }
+      ]
+    }
+  }
+};
