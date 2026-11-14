@@ -558,13 +558,22 @@ async function answer(ok, p, advance) {
   if (advance) { quiz.index++; quizView(); }
 }
 
+// 支援 PNG／JPEG／WebP；檔案類型空白時依副檔名判斷（部分 Android App 不回報類型）
+const IMAGE_TYPES = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp' };
+function imageType(f) {
+  if (Object.values(IMAGE_TYPES).includes(f.type)) return f.type;
+  const ext = String(f.name || '').toLowerCase().split('.').pop();
+  return (!f.type || f.type === 'application/octet-stream') ? IMAGE_TYPES[ext] || '' : '';
+}
 // 圖片只存在本機並綁定到你上傳的位置，不呼叫 AI
 async function saveImages(files, target) {
   let n = 0;
   const bad = [];
   for (const f of [...(files || [])]) {
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) || f.size > 8 * 1024 * 1024) { bad.push(f.name); continue; }
-    await put('media', { id: uuid(), phraseId: target.phraseId || null, group: target.group, name: f.name, blob: f, createdAt: Date.now() });
+    const type = imageType(f);
+    if (!type || f.size > 8 * 1024 * 1024) { bad.push(f.name); continue; }
+    const blob = f.type === type ? f : new Blob([f], { type });
+    await put('media', { id: uuid(), phraseId: target.phraseId || null, group: target.group, name: f.name, blob, createdAt: Date.now() });
     n++;
   }
   if (bad.length) alert('以下檔案未上傳（僅允許 PNG／JPEG／WebP 且小於 8MB）：' + bad.join('、'));

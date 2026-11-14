@@ -85,12 +85,46 @@ public class MainActivity extends Activity {
    @Override public boolean onShowFileChooser(WebView v,ValueCallback<Uri[]> cb,FileChooserParams p){
     if(fileCallback!=null)fileCallback.onReceiveValue(null);
     fileCallback=cb;
-    try{startActivityForResult(p.createIntent(),REQ_FILE);}catch(Exception e){fileCallback=null;return false;}
+    try{startActivityForResult(chooserIntent(p),REQ_FILE);}catch(Exception e){fileCallback=null;return false;}
     return true;
    }
   });
   web.addJavascriptInterface(new Bridge(),"PhraseMapNative");
   if(state!=null)web.restoreState(state);else web.loadUrl(START_URL);
+ }
+
+ /**
+  * The default chooser intent filters by the FIRST accepted type only (e.g. image/png), which hides
+  * JPEG and WebP files. List every accepted MIME type and allow multiple selection when the page asks.
+  */
+ static Intent chooserIntent(WebChromeClient.FileChooserParams p){
+  java.util.ArrayList<String> mimes=new java.util.ArrayList<>();
+  for(String t:p.getAcceptTypes()){
+   if(t==null)continue;
+   for(String part:t.split(",")){
+    String m=part.trim().toLowerCase(java.util.Locale.ROOT);
+    if(m.startsWith("."))m=android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(m.substring(1));
+    if(m!=null&&m.contains("/")&&!mimes.contains(m))mimes.add(m);
+   }
+  }
+  Intent i=new Intent(Intent.ACTION_GET_CONTENT);
+  i.addCategory(Intent.CATEGORY_OPENABLE);
+  boolean allImages=!mimes.isEmpty();
+  for(String m:mimes)if(!m.startsWith("image/"))allImages=false;
+  i.setType(mimes.size()==1?mimes.get(0):allImages?"image/*":"*/*");
+  if(mimes.size()>1)i.putExtra(Intent.EXTRA_MIME_TYPES,mimes.toArray(new String[0]));
+  if(p.getMode()==WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE)i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);
+  return i;
+ }
+
+ static Uri[] pickedUris(int result,Intent data){
+  if(result!=RESULT_OK||data==null)return null;
+  if(data.getClipData()!=null&&data.getClipData().getItemCount()>0){
+   Uri[] out=new Uri[data.getClipData().getItemCount()];
+   for(int k=0;k<out.length;k++)out[k]=data.getClipData().getItemAt(k).getUri();
+   return out;
+  }
+  return data.getData()!=null?new Uri[]{data.getData()}:null;
  }
 
  private WebResourceResponse asset(String path){
@@ -107,7 +141,7 @@ public class MainActivity extends Activity {
  @Override protected void onActivityResult(int req,int result,Intent data){
   super.onActivityResult(req,result,data);
   if(req==REQ_FILE&&fileCallback!=null){
-   fileCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result,data));
+   fileCallback.onReceiveValue(pickedUris(result,data));
    fileCallback=null;
   }else if(req==REQ_SAVE&&pendingSaveId!=null){
    final String id=pendingSaveId,text=pendingSaveText;
