@@ -1,6 +1,6 @@
 # PhraseMap AI — 開發代理指引
 
-請先讀 `docs/PRODUCT_REQUIREMENTS.md`，以其 P0／驗收條件優先；本 repo 目前是規劃階段，不可自稱已有可運作 APP。
+請先讀 `docs/PRODUCT_REQUIREMENTS.md`，以其 P0／驗收條件優先；本 repo 有網頁版（`index.html` + `js/core.js` + `data/`）與 Android WebView App（`android/`，AI 只在 App）。300 筆預載資料為 AI 輔助整理、尚待人工校對，不可宣稱「經校對」。預載片語 ID 必須穩定（`seed:<group>/<phrase>`，見 `scripts/build_data.py`），永不重新編號。17 小詞：IN, INTO, OUT, OUT OF, UP, DOWN, ON, OFF, OVER, AWAY, BACK, ABOUT, (A)ROUND, ACROSS, THROUGH, BY, ALONG（OUT OF 為使用者指定）。改動後執行 `node --test tests/core.test.js` 與 `node tests/e2e.js`。
 
 ## 不可違反
 1. 不刪除／重建使用者資料：資料庫、圖片、牌卡、個人片語、筆記、文章、複習紀錄、API 設定都必須獨立於可替換的程式碼；升級要備份 + migration + 回歸測試；禁止 `docker compose down -v`。

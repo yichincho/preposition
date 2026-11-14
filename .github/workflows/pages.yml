@@ -18,10 +18,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test data and core logic
+        run: node --test tests/core.test.js
       - name: Prepare static site
         run: |
-          mkdir -p dist
+          mkdir -p dist/js dist/data
           cp index.html dist/index.html
+          cp js/core.js dist/js/
+          cp data/phrases.js data/models.js dist/data/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

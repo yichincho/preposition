@@ -1,55 +1,650 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#274735"><title>PhraseMap AI | 小詞意象學習</title>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#274735">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://raw.githubusercontent.com data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>PhraseMap AI | 小詞意象學習</title>
 <style>
-:root{--paper:#f4f1e9;--green:#274735;--sage:#7a9276;--ink:#2f302a;--muted:#68736b;--line:#d4dcd1;--red:#c52b30}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 system-ui,"Noto Sans TC",sans-serif}header{background:var(--green);color:#fff;padding:22px max(20px,calc((100vw - 1100px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1,h2,h3{line-height:1.3}h1{font-size:1.35rem;margin:0}h2{font-size:1.5rem;margin:.2rem 0 1rem}h3{font-size:1.08rem;margin:.4rem 0}main{max-width:1100px;margin:24px auto;padding:0 20px 60px}.sub{color:var(--muted);font-size:.91rem}header .sub{color:#dce7dc}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0}.tabs button{background:transparent;border:1px solid #8d9f90}.tabs button.active{color:white;background:var(--green)}button,.button{font:inherit;cursor:pointer;border:1px solid var(--green);border-radius:9px;padding:9px 14px;background:var(--green);color:white}button:hover{filter:brightness(1.1)}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:transparent;color:var(--green)}.chip{border:1px solid var(--line);padding:7px 13px;color:var(--green);background:#fffdf8;border-radius:8px}.chip.selected{background:var(--green);color:white}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:12px}.panel,.tile{background:#fffdf8;border:1px solid var(--line);border-radius:13px;padding:19px;box-shadow:0 3px 12px #2747350a}.tile{cursor:pointer;text-align:left;color:var(--ink)}.tile strong{font-size:1.45rem;color:var(--green)}.tile span{display:block}.tile:hover{border-color:var(--green)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}input,select,textarea{font:inherit;color:var(--ink);padding:10px;border:1px solid #aab6a8;border-radius:9px;background:white;width:100%;min-width:0}label{display:block;font-weight:600;margin:10px 0 5px}.small{font-size:.85rem}.pill{display:inline-block;padding:3px 9px;background:#e1e9df;border-radius:12px;margin:3px 5px 3px 0;font-size:.84rem}.red{color:var(--red);font-weight:700}.particle{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}.meaning{padding:12px;background:#eef3eb;border-left:3px solid var(--sage);margin:12px 0}.hidden{display:none!important}.options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.options button{background:white;color:var(--ink);border:1px solid #aebdad;text-align:left;min-height:60px}.options button.correct{background:#d7edda;border-color:#35744b}.options button.wrong{background:#f8dcdc;border-color:#b64c4c}.hero{padding:25px 0 15px;border-bottom:1px solid var(--line);margin-bottom:16px}.hero p{max-width:750px}.thumb{width:100%;max-height:250px;object-fit:contain;background:#eee;border-radius:10px}.banner{background:#e4ebe0;padding:13px 16px;border-radius:10px}.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}.mono{font-family:ui-monospace,monospace}.bamboo{font-size:30px;opacity:.75}footer{color:var(--muted);text-align:center;padding:20px}@media(max-width:650px){.columns,.options{grid-template-columns:1fr}header{padding:16px 20px}.panel{padding:15px}}
-</style></head>
-<body><header><div><h1>竹語 · PhraseMap AI <span class="bamboo">𖥧</span></h1><div class="sub">從空間意象，理解英文片語</div></div><span class="small">資料保存在此瀏覽器 · 更新程式不清空資料</span></header>
-<main><nav class="tabs" id="nav"></nav><div id="view"></div></main><footer>PhraseMap AI MVP · 自建學習資料請定期匯出備份 · 部分認知解釋為教學聯想</footer>
+:root{--paper:#f4f1e9;--green:#274735;--sage:#7a9276;--ink:#2f302a;--muted:#68736b;--line:#d4dcd1;--red:#c52b30;--card:#fffdf8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 system-ui,"Noto Sans TC",sans-serif}
+header{background:var(--green);color:#fff;padding:22px max(20px,calc((100vw - 1100px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1,h2,h3{line-height:1.3}h1{font-size:1.35rem;margin:0}h2{font-size:1.5rem;margin:.2rem 0 1rem}h3{font-size:1.08rem;margin:.4rem 0}
+main{max-width:1100px;margin:24px auto;padding:0 16px 60px}
+.sub{color:var(--muted);font-size:.91rem}header .sub{color:#dce7dc}
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0}.tabs button{background:transparent;border:1px solid #8d9f90;color:var(--green)}.tabs button.active{color:#fff;background:var(--green)}
+button,.button{font:inherit;cursor:pointer;border:1px solid var(--green);border-radius:9px;padding:9px 14px;background:var(--green);color:#fff}
+button:hover{filter:brightness(1.1)}button:disabled{opacity:.45;cursor:not-allowed}
+.secondary{background:transparent;color:var(--green)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:12px}
+.panel,.tile{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:19px;box-shadow:0 3px 12px #2747350a}
+.tile{cursor:pointer;text-align:left;color:var(--ink)}.tile strong{font-size:1.45rem;color:var(--green)}.tile span{display:block}.tile:hover,.tile.selected{border-color:var(--green)}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}
+.columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+input,select,textarea{font:inherit;color:var(--ink);padding:10px;border:1px solid #aab6a8;border-radius:9px;background:#fff;width:100%;min-width:0}
+input[type=checkbox]{width:auto}
+label{display:block;font-weight:600;margin:10px 0 5px}
+.small{font-size:.85rem}
+.pill{display:inline-block;padding:3px 9px;background:#e1e9df;border-radius:12px;margin:3px 5px 3px 0;font-size:.84rem}
+.pill.warn{background:#f6e3c6}
+.red{color:var(--red);font-weight:700}
+.particle{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.meaning{padding:12px;background:#eef3eb;border-left:3px solid var(--sage);margin:12px 0}
+.hidden{display:none!important}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.options button{background:#fff;color:var(--ink);border:1px solid #aebdad;text-align:left;min-height:60px}
+.options button.correct{background:#d7edda;border-color:#35744b}.options button.wrong{background:#f8dcdc;border-color:#b64c4c}
+.hero{padding:25px 0 15px;border-bottom:1px solid var(--line);margin-bottom:16px}.hero p{max-width:750px}
+.thumb{width:100%;max-height:250px;object-fit:contain;background:#eee;border-radius:10px}
+.banner{background:#e4ebe0;padding:13px 16px;border-radius:10px}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}
+.bamboo{font-size:30px;opacity:.75}
+.list-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:10px 0;flex-wrap:wrap}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 12px;max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff}
+.checks label{font-weight:400;margin:0;display:flex;gap:6px;align-items:center}
+.article p{font-size:1.06rem;line-height:1.85}
+.progress-log{font-size:.9rem;color:var(--muted);white-space:pre-wrap}
+footer{color:var(--muted);text-align:center;padding:20px}footer a{color:var(--green)}
+@media(max-width:650px){.columns,.options{grid-template-columns:1fr}header{padding:16px 20px}.panel{padding:15px}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>竹語 · PhraseMap AI <span class="bamboo">𖥧</span></h1><div class="sub">從空間意象，理解英文片語</div></div>
+  <span class="small">資料保存在此裝置 · 更新程式不清空資料</span>
+</header>
+<main><nav class="tabs" id="nav"></nav><div id="view"></div></main>
+<footer id="footer">PhraseMap AI · 自建學習資料請定期匯出備份 · 預載片語為 AI 輔助整理、待人工校對 · 認知解釋為教學聯想</footer>
+<script src="js/core.js"></script>
+<script src="data/phrases.js"></script>
+<script src="data/models.js"></script>
 <script>
 'use strict';
-const groups=[
-['OUT','由內向外／顯露'],['IN','進入／納入'],['INTO','從外進入／轉變'],['UP','向上／完成'],['DOWN','向下／降低'],['OFF','分離／停止'],['AWAY','遠離／移除'],['ON','接觸／持續'],['OVER','跨越／檢視'],['BACK','返回／恢復'],['ABOUT','周圍／四處'],['(A)ROUND','環繞／迴轉'],['ABOUT / (A)ROUND','分散與環繞比較'],['ACROSS','橫越／遇見'],['THROUGH','穿越／經歷'],['BY','經過／接近'],['ALONG','沿著路徑']];
-const raw=[
-['UP','give up','放棄','慣用化的放棄','Do not give up.'],['UP','use up','用光；耗盡','資源使用至終點','We used up the paper.'],['UP','cheer up','振作起來','情緒提升','Please cheer up.'],['UP','set up','建立；設置','使安排就位','They set up a club.'],['UP','speed up','加速','速度提高','We need to speed up.'],['UP','fill up','裝滿','容量達到上限','Fill up the bottle.'],['UP','pick up','撿起；接送','從下方取起','I picked up the book.'],
-['OUT','find out','發現；查明','隱藏資訊顯露','I found out the truth.'],['OUT','point out','指出','讓未注意資訊顯露','She pointed out an error.'],['OUT','run out of','用完；耗盡','從有限資源走到耗盡','We ran out of time.'],['OUT','carry out','執行','把計畫帶到實際世界','They carried out the plan.'],['OUT','leave out','省略','排除在內容之外','Do not leave out details.'],
-['OFF','take off','脫掉','從接觸狀態分離','He took off his coat.'],['OFF','switch off','關掉','中斷運作','Switch off the lights.'],['OFF','cut off','切斷','連接被中斷','The storm cut off power.'],['OFF','call off','取消','終止原定活動','They called off the meeting.'],['OFF','put off','延後','移離原定時間','We put off the trip.'],
-['IN','join in','加入','進入共同活動','You can join in the game.'],['IN','fill in','填寫','把資訊放進空格','Fill in the form.'],['IN','hand in','繳交','送入指定流程','Hand in your homework.'],
-['INTO','turn into','變成','進入新狀態','Water turns into ice.'],['INTO','run into','偶遇；撞上','進入對方所在路徑','I ran into a friend.'],
-['DOWN','slow down','減速','速度下降','Slow down, please.'],['DOWN','calm down','冷靜下來','情緒強度下降','Try to calm down.'],['DOWN','break down','故障；崩潰','系統失去原有功能','The car broke down.'],['DOWN','write down','寫下','把資訊落在紙面','Write down the address.'],
-['AWAY','go away','離開','遠離原點','The pain went away.'],['AWAY','throw away','丟掉','使物品離開持有範圍','Do not throw away the notes.'],['AWAY','fade away','逐漸消失','逐漸遠離可感知範圍','The sound faded away.'],
-['ON','carry on','繼續','動作持續','Carry on with your work.'],['ON','turn on','打開；啟動','進入運作狀態','Turn on the computer.'],['ON','put on','穿上','接觸並覆蓋','Put on your jacket.'],['ON','go on','繼續；發生','活動延續','Please go on.'],
-['OVER','get over','克服；恢復','跨越障礙','She got over the setback.'],['OVER','think over','仔細考慮','反覆檢視問題','Think over the proposal.'],['OVER','look over','檢查','從整體視角查看','Look over this report.'],['OVER','take over','接管','控制權轉移','She took over the team.'],['OVER','go over','複習；檢查','再次檢視','Go over the main points.'],
-['BACK','come back','回來','返回先前位置','Come back soon.'],['BACK','give back','歸還','返回原持有者','Give back the key.'],['BACK','call back','回電話','回應前次聯絡','I will call back later.'],
-['ABOUT','move about','四處走動','在某範圍內分散移動','People moved about the hall.'],['(A)ROUND','turn around','轉身','沿環繞路徑改變方向','Turn around slowly.'],['ABOUT / (A)ROUND','look around','四處看看','查看周遭','Look around the room.'],['ACROSS','come across','偶然遇見','路徑與對象交會','I came across an old photo.'],['ACROSS','get across','傳達清楚','想法跨越至接收者','She got the idea across.'],['THROUGH','go through','經歷','穿越一段過程','We went through a hard time.'],['THROUGH','get through','度過；完成','成功走完整個過程','We got through the exam.'],['THROUGH','think through','徹底思考','思考完整過程','Think through the risks.'],['BY','pass by','經過','沿物體旁邊移動','A car passed by.'],['ALONG','move along','繼續前進','沿路徑移動','Please move along.']];
-const seed=raw.map((r,i)=>({id:'seed-'+i,group:r[0],phrase:r[1],zh:r[2],hint:r[3],example:r[4],user:false}));
-const DB='phrasemap-personal-v1';let db;let tab='map';let selected='UP';let quiz=null;let mode='multiple';
-const $=id=>document.getElementById(id);
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function openDB(){return new Promise((ok,no)=>{let r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{let d=r.result;for(let n of ['phrases','media','progress','notes'])if(!d.objectStoreNames.contains(n))d.createObjectStore(n,{keyPath:'id'});};r.onsuccess=()=>{db=r.result;ok()};r.onerror=()=>no(r.error)});}
-function store(name,mode='readonly'){return db.transaction(name,mode).objectStore(name)}
-function req(r){return new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
-function all(n){return req(store(n).getAll())}function get(n,id){return req(store(n).get(id))}
-function put(n,val){return req(store(n,'readwrite').put(val))}
-function del(n,id){return req(store(n,'readwrite').delete(id))}
-function uuid(){return crypto.randomUUID?crypto.randomUUID():'u-'+Date.now()+'-'+Math.random().toString(36).slice(2)}
-let entries=[];
-async function load(){let local=await all('phrases');entries=[...seed.filter(s=>!local.some(x=>x.id===s.id)),...local];}
-function link(p){return '<button class="secondary" data-open="'+esc(p.id)+'">查看／製作牌卡</button>'}
-function bindLinks(){document.querySelectorAll('[data-open]').forEach(x=>x.onclick=()=>detail(x.dataset.open))}
-function nav(){let names=[['map','意象地圖'],['library','片語庫'],['quiz','牌卡複習'],['images','圖片與筆記'],['backup','備份／匯入']];$('nav').innerHTML=names.map(x=>'<button class="'+(tab===x[0]?'active':'')+'" data-tab="'+x[0]+'">'+x[1]+'</button>').join('');document.querySelectorAll('[data-tab]').forEach(x=>x.onclick=()=>{tab=x.dataset.tab;render()})}
-function render(){nav();if(tab==='map')mapView();if(tab==='library')libraryView();if(tab==='quiz')quizView();if(tab==='images')imagesView();if(tab==='backup')backupView();}
-function mapView(){let list=entries.filter(p=>p.group===selected);$('view').innerHTML='<section class="hero"><h2>17 個核心小詞教學入口</h2><p class="sub">從「空間 → 時間／狀態 → 抽象語意」建立自己的記憶路徑。此版為原創教學聯想，非原書全文轉載。</p></section><div class="grid">'+groups.map(g=>'<button class="tile" data-group="'+esc(g[0])+'"><strong>'+esc(g[0])+'</strong><span>'+esc(g[1])+'</span><span class="sub">'+entries.filter(x=>x.group===g[0]).length+' 個示範片語</span></button>').join('')+'</div><section class="panel" style="margin-top:16px"><h2>'+esc(selected)+'：'+esc((groups.find(x=>x[0]===selected)||[])[1])+'</h2><p class="sub">示範資料分成具體空間畫面、意義延伸與片語。更多高頻片語可自行加入。</p>'+list.map(p=>'<div class="row between" style="border-top:1px solid var(--line);padding:10px 0"><div><b>'+esc(p.phrase)+'</b>　'+esc(p.zh)+'<div class="sub">'+esc(p.hint)+'</div></div>'+link(p)+'</div>').join('')+'</section>';document.querySelectorAll('[data-group]').forEach(x=>x.onclick=()=>{selected=x.dataset.group;render()});bindLinks();}
-function libraryView(){let filter=window.libfilter||'';let rows=entries.filter(p=>(p.phrase+' '+p.zh+' '+p.group).toLowerCase().includes(filter.toLowerCase()));$('view').innerHTML='<div class="row between"><h2>片語知識庫</h2><button id="newEntry">＋ 自行新增片語</button></div><input id="search" placeholder="搜尋英文、中文或小詞" value="'+esc(filter)+'"><p class="sub">目前 '+entries.length+' 筆（'+seed.length+' 筆示範預載資料）；自建資料不會被更新覆蓋。</p><div class="grid">'+rows.map(p=>'<article class="panel"><span class="pill">'+esc(p.group)+'</span><h3>'+esc(p.phrase)+'</h3><div>'+esc(p.zh)+'</div><div class="sub">'+esc(p.hint)+'</div>'+link(p)+'</article>').join('')+'</div>';$('search').oninput=e=>{window.libfilter=e.target.value;libraryView();$('search').focus();$('search').setSelectionRange(window.libfilter.length,window.libfilter.length)};$('newEntry').onclick=addEntry;bindLinks();}
-function addEntry(){let opts=groups.filter(g=>g[0]!=='ABOUT / (A)ROUND').map(g=>'<option>'+esc(g[0])+'</option>').join('');$('view').innerHTML='<div class="panel"><h2>新增個人片語</h2><label>所屬小詞</label><select id="ag">'+opts+'</select><label>英文片語</label><input id="ap" placeholder="e.g. brush up on"><label>中文意思（請只填一種語意）</label><input id="az"><label>認知聯想</label><textarea id="ah"></textarea><label>英文例句</label><textarea id="ae"></textarea><div class="toolbar"><button id="save">儲存到本機</button><button class="secondary" id="cancel">取消</button></div><div id="msg" role="status"></div></div>';$('cancel').onclick=render;$('save').onclick=async()=>{let phrase=$('ap').value.trim(),zh=$('az').value.trim();if(!phrase||!zh){$('msg').textContent='英文與中文不能留空';return}await put('phrases',{id:uuid(),group:$('ag').value,phrase,zh,hint:$('ah').value,example:$('ae').value,user:true});await load();libraryView()};}
-async function detail(id){let p=entries.find(x=>x.id===id);if(!p)return;let imgs=(await all('media')).filter(m=>m.phraseId===id);let note=await get('notes',id);$('view').innerHTML='<button class="secondary" id="back">← 返回</button><article class="panel" style="margin-top:12px"><span class="pill">'+esc(p.group)+'</span><h2>'+esc(p.phrase)+'</h2><h3>'+esc(p.zh)+'</h3><div class="meaning">'+esc(p.hint)+'</div><p>'+highlight(p.example,p.phrase)+'</p><div class="columns"><section><h3>個人筆記</h3><textarea id="note" rows="5" placeholder="自己理解的空間畫面與例句">'+esc(note?.text||'')+'</textarea><button id="saveNote">儲存筆記</button><h3>生成教學圖片提示詞</h3><p class="sub">可複製到 ChatGPT 等圖像工具，再將結果匯回。</p><button class="secondary" id="prompt">複製中國竹風 Prompt</button><div id="notice" class="sub"></div></section><section><h3>我的圖片（'+imgs.length+'）</h3><input id="upload" type="file" accept="image/png,image/jpeg,image/webp"><div class="grid" id="photos">'+imgs.map(m=>'<div><img class="thumb" src="'+URL.createObjectURL(m.blob)+'" alt="個人記憶圖"><button class="secondary" data-remove="'+esc(m.id)+'">刪除此圖片</button></div>').join('')+'</div></section></div>'+(p.user?'<button class="secondary" id="deleteEntry">刪除個人片語</button>':'')+'</article>';$('back').onclick=render;$('saveNote').onclick=async()=>{await put('notes',{id,text:$('note').value});$('notice').textContent='筆記已儲存'};$('prompt').onclick=async()=>{let s='請製作繁體中文英文片語認知資訊圖，片語 '+p.phrase+'，意思 '+p.zh+'，核心小詞 '+p.group+'。意象：'+p.hint+'。用起始→變化→結果呈現空間／抽象語意。採 editorial-infographic-tw：米白紙張 #F4F1E9、深墨綠 #274735、灰綠 #7A9276，搭配節制的中國竹葉水墨裝飾、清晰繁體字、雜誌式排版、留白、正確英文拼字，避免霓虹與重複卡框。';try{await navigator.clipboard.writeText(s);$('notice').textContent='提示詞已複製'}catch{$('notice').textContent=s}};$('upload').onchange=async(e)=>{let f=e.target.files[0];if(!f)return;if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>8*1024*1024){alert('僅允許 PNG/JPEG/WebP 且小於 8MB');return}await put('media',{id:uuid(),phraseId:id,name:f.name,blob:f,createdAt:Date.now()});detail(id)};document.querySelectorAll('[data-remove]').forEach(x=>x.onclick=async()=>{if(confirm('確定刪除這張圖片？')){await del('media',x.dataset.remove);detail(id)}});if(p.user)$('deleteEntry').onclick=async()=>{if(confirm('確定刪除此片語？相關筆記與圖片不會自動刪除，請先自行備份。')){await del('phrases',id);await load();libraryView()}};}
-function highlight(text,phrase){let words=phrase.split(' ');let particle=words.slice(1).join(' ');let v=words[0];let tokens=String(text||'').split(/(\b[\w']+\b)/);let bases={give:'gave|given|giving|gives',use:'used|using|uses',set:'setting|sets',cheer:'cheered|cheering|cheers',speed:'sped|speeding|speeds',run:'ran|running|runs',take:'took|taken|taking|takes',find:'found|finding|finds',go:'went|gone|going|goes',get:'got|getting|gets',put:'putting|puts',come:'came|coming|comes'};let re=new RegExp('^(?:'+v+'|'+(bases[v]||v+'s|'+v+'d|'+v+'ing')+')$','i');let seen=false;return tokens.map(t=>{if(re.test(t)){seen=true;return '<span class="red">'+esc(t)+'</span>'}if(seen&&words.slice(1).some(w=>w.toLowerCase()===t.toLowerCase()))return '<span class="particle">'+esc(t)+'</span>';return esc(t)}).join('');}
-async function quizView(){if(!quiz){$('view').innerHTML='<div class="panel"><h2>Anki 風格記憶複習</h2><p>先看英文，再選正確中文；或使用翻卡自評。不同意思以獨立詞義卡呈現。</p><label>選擇小詞</label><select id="qgroup">'+groups.map(g=>'<option value="'+esc(g[0])+'" '+(selected===g[0]?'selected':'')+'>'+esc(g[0])+' · '+esc(g[1])+'</option>').join('')+'</select><label>模式</label><select id="qmode"><option value="multiple">隨機中文四選一</option><option value="flip">翻卡自評</option></select><label>題數</label><select id="qcount"><option>10</option><option>20</option><option>30</option></select><p class="sub">某組少於 4 個不同中文意思時，會提示改用翻卡或補充詞條。</p><button id="start">開始複習</button></div>';$('start').onclick=()=>{selected=$('qgroup').value;mode=$('qmode').value;let pool=entries.filter(x=>x.group===selected);if(!pool.length){alert('該組尚未有牌卡');return}if(mode==='multiple'&&new Set(pool.map(x=>x.zh)).size<4){alert('此組不足 4 個不同中文選項，請改用翻卡自評或新增片語。');return}quiz={items:shuffle(pool).slice(0,Number($('qcount').value)),index:0,correct:0,answered:false};quizView()};return}let p=quiz.items[quiz.index];if(!p){$('view').innerHTML='<article class="panel"><h2>練習完成</h2><p>本回合：'+quiz.correct+' / '+quiz.items.length+' 題</p><button id="again">返回練習設定</button></article>';$('again').onclick=()=>{quiz=null;quizView()};return}let pool=entries.filter(x=>x.group===selected);let distractors=shuffle(pool.filter(x=>x.zh!==p.zh)).filter((x,i,a)=>a.findIndex(y=>y.zh===x.zh)===i).slice(0,3);let options=shuffle([p,...distractors]);$('view').innerHTML='<article class="panel"><div class="row between"><span class="pill">'+esc(selected)+'</span><span class="sub">第 '+(quiz.index+1)+' / '+quiz.items.length+' 題　答對 '+quiz.correct+'</span></div><h2 style="font-size:2.1rem;text-align:center;margin:35px 0">'+esc(p.phrase)+'</h2>'+(mode==='flip'?'<div class="row"><button id="flip">翻面顯示答案</button></div><div class="hidden meaning" id="answer">'+esc(p.zh)+'<p>'+esc(p.hint)+'</p><button id="self0" class="secondary">忘記</button> <button id="self1">記得</button></div>':'<p>請選擇正確中文意思：</p><div class="options">'+options.map(x=>'<button data-choice="'+esc(x.id)+'">'+esc(x.zh)+'</button>').join('')+'</div><div id="feedback" class="hidden meaning"></div><button id="next" class="hidden">下一題 →</button>')+'</article>';if(mode==='flip'){$('flip').onclick=()=>{$('answer').classList.remove('hidden');$('flip').disabled=true};for(let i=0;i<2;i++)$('self'+i).onclick=()=>record(i===1,p)}else{document.querySelectorAll('[data-choice]').forEach(x=>x.onclick=()=>{if(quiz.answered)return;quiz.answered=true;let ok=x.dataset.choice===p.id;document.querySelectorAll('[data-choice]').forEach(b=>{b.disabled=true;if(b.dataset.choice===p.id)b.classList.add('correct');else if(b===x)b.classList.add('wrong')});$('feedback').classList.remove('hidden');$('feedback').innerHTML=(ok?'答對了！':'答錯了，正解：'+esc(p.zh))+'<p>'+esc(p.hint)+'</p>';$('next').classList.remove('hidden');recordProgress(ok,p);if(ok)quiz.correct++});$('next').onclick=()=>{quiz.index++;quiz.answered=false;quizView()}}}
-function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
-async function recordProgress(ok,p){let prev=await get('progress',p.id);await put('progress',{id:p.id,attempts:(prev?.attempts||0)+1,correct:(prev?.correct||0)+(ok?1:0),updatedAt:Date.now()})}
-async function record(ok,p){await recordProgress(ok,p);if(ok)quiz.correct++;quiz.index++;quizView()}
-async function imagesView(){let imgs=await all('media'),notes=await all('notes');$('view').innerHTML='<h2>個人記憶圖與筆記</h2><p class="sub">圖片直接保存在本瀏覽器的 IndexedDB，而不是程式檔案中。清除網站資料、瀏覽器設定檔或換裝置仍可能遺失，因此請定期匯出備份。</p><div class="banner">共 '+imgs.length+' 張圖片、'+notes.length+' 筆筆記。點選片語進入編輯頁面上傳圖片。</div><div class="grid" style="margin-top:14px">'+imgs.map(m=>{let p=entries.find(x=>x.id===m.phraseId);return '<article class="panel"><img class="thumb" src="'+URL.createObjectURL(m.blob)+'" alt="'+esc(m.name)+'"><h3>'+esc(p?.phrase||'未找到片語')+'</h3><button class="secondary" data-open="'+esc(m.phraseId)+'">查看</button></article>'}).join('')+'</div>';bindLinks()}
-function blobToData(blob){return new Promise((ok,no)=>{let f=new FileReader();f.onload=()=>ok(f.result);f.onerror=()=>no(f.error);f.readAsDataURL(blob)})}
-async function backupView(){$('view').innerHTML='<article class="panel"><h2>安全備份與還原</h2><p>個人資料存在 IndexedDB，更新網頁不執行清空。下載完整 JSON 備份（包含圖片），換瀏覽器或清除資料前請先備份。</p><div class="toolbar"><button id="export">下載完整備份</button><label class="button" style="margin:0">匯入備份<input id="import" type="file" accept=".json,application/json" class="hidden"></label></div><p class="sub">匯入採合併策略（同 ID 更新），不先清空既有資料。請確保備份檔案可信。</p><div id="status" role="status"></div></article>';$('export').onclick=async()=>{try{let payload={format:'PhraseMapBackup',version:1,createdAt:new Date().toISOString(),stores:{}};for(let n of ['phrases','progress','notes'])payload.stores[n]=await all(n);payload.stores.media=[];for(let m of await all('media'))payload.stores.media.push({...m,blob:await blobToData(m.blob)});let b=new Blob([JSON.stringify(payload)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='phrasemap-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);$('status').textContent='備份檔案已準備下載'}catch(e){$('status').textContent='備份失敗：'+e.message}};$('import').onchange=async(e)=>{try{let f=e.target.files[0];if(!f)return;let obj=JSON.parse(await f.text());if(obj.format!=='PhraseMapBackup'||obj.version!==1||!obj.stores||!Array.isArray(obj.stores.phrases))throw Error('格式不相容');if(!confirm('將合併備份資料到此瀏覽器（同 ID 會更新），確定嗎？'))return;for(let n of ['phrases','progress','notes','media']){if(!Array.isArray(obj.stores[n]))continue;for(let rec of obj.stores[n]){if(!rec.id)continue;if(n==='media'&&typeof rec.blob==='string'){let resp=await fetch(rec.blob);rec.blob=await resp.blob()}await put(n,rec)}}await load();$('status').textContent='匯入完成，資料已合併'}catch(err){$('status').textContent='匯入失敗：'+err.message}}}
-(async()=>{try{await openDB();await load();render()}catch(e){$('view').innerHTML='<div class="banner">無法啟動本機資料庫：'+esc(e.message)+'。請使用支援 IndexedDB 的現代瀏覽器並確認不是限制儲存的模式。</div>'}})();
-</script></body></html>
+const C = window.PhraseCore;
+const esc = C.esc;
+const $ = id => document.getElementById(id);
+
+// ───────── 17 個小詞（particle）與比較課（lesson） ─────────
+const GROUPS = [
+  ['IN', '進入／在容器內', '容器：從外面進入界線之內，延伸為加入、參與、提交。'],
+  ['INTO', '從外進入／轉變', '路徑＋容器：移動進入內部，延伸為變成新狀態、碰撞、投入。'],
+  ['OUT', '由內向外／顯露', '容器：離開界線，延伸為顯露、發現、耗盡、完成到底。'],
+  ['OUT OF', '脫離容器／來源', '容器＋來源：從某個內部脫離，延伸為逃避、退出、用完、出於某原因。'],
+  ['UP', '向上／完成', '垂直：向上移動，延伸為增加、出現、靠近、完成到極限。'],
+  ['DOWN', '向下／降低', '垂直：向下移動，延伸為減少、平息、固定下來、記錄、失敗。'],
+  ['ON', '接觸／持續', '接觸面：在表面上，延伸為啟動、穿戴、持續、依靠。'],
+  ['OFF', '分離／停止', '分離：離開接觸面，延伸為出發、關閉、取消、斷開。'],
+  ['OVER', '跨越／覆蓋／檢視', '弧形路徑：越過上方，延伸為克服、從頭到尾檢視、轉移控制。'],
+  ['AWAY', '遠離／消失', '路徑：離開原點變遠，延伸為移除、消失、持續不停。'],
+  ['BACK', '返回／回應', '反向路徑：回到原點，延伸為歸還、恢復、回應、退縮。'],
+  ['ABOUT', '四處分散／關於', '無固定路徑：在範圍內四處移動，延伸為發生、著手、關於。'],
+  ['(A)ROUND', '環繞／轉向', '圓形路徑：繞著或轉向，延伸為巡視、扭轉、繞過、傳遞。'],
+  ['ACROSS', '橫越／傳達', '橫向路徑：從一邊到另一邊，延伸為偶遇、傳達清楚。'],
+  ['THROUGH', '穿越／經歷', '通道：從入口穿到出口，延伸為經歷、完成、看穿。'],
+  ['BY', '經過／旁邊', '鄰近：在旁邊或經過，延伸為短暫拜訪、支持、度過。'],
+  ['ALONG', '沿路徑／一起前進', '線性路徑：沿著前進，延伸為進展、同行、配合。'],
+];
+const COMPARISON = {
+  title: '比較課：ABOUT 與 (A)ROUND',
+  text: 'ABOUT 偏向在範圍內「無固定路徑、到處分散」（move about、wander about）；(A)ROUND 偏向「環繞或轉向的弧線路徑」（turn around、look around）。兩者常可互換，但 (A)ROUND 更強調圓周與轉向。此為比較說明，不是第 18 個小詞。',
+};
+const groupInfo = g => GROUPS.find(x => x[0] === g) || [g, '', ''];
+
+// ───────── 資料庫 ─────────
+const DB_NAME = 'phrasemap-personal-v1';
+const DB_VERSION = 3;
+const STORES = ['phrases', 'media', 'progress', 'notes', 'meta', 'articles', 'settings'];
+const seed = (window.PHRASEMAP_SEED || []).map(r => ({ ...r, user: false }));
+let db;
+let entries = [];
+const state = { tab: 'map', group: 'UP', quiz: null, libFilter: '', libGroup: '' };
+
+function openDB() {
+  return new Promise((ok, no) => {
+    const r = indexedDB.open(DB_NAME, DB_VERSION);
+    r.onupgradeneeded = () => { const d = r.result; for (const n of STORES) if (!d.objectStoreNames.contains(n)) d.createObjectStore(n, { keyPath: 'id' }); };
+    r.onsuccess = () => { db = r.result; ok(); };
+    r.onerror = () => no(r.error);
+    r.onblocked = () => no(new Error('資料庫被其他分頁占用，請關閉其他 PhraseMap 分頁後重新整理'));
+  });
+}
+const store = (n, mode = 'readonly') => db.transaction(n, mode).objectStore(n);
+const req = r => new Promise((ok, no) => { r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+const all = n => req(store(n).getAll());
+const get = (n, id) => req(store(n).get(id));
+const put = (n, v) => req(store(n, 'readwrite').put(v));
+const del = (n, id) => req(store(n, 'readwrite').delete(id));
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'u-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+
+// 舊版 seed-<序號> → 穩定 ID（筆記、複習、圖片）
+async function migrateLegacyIds() {
+  if (await get('meta', 'legacy-ids-v3')) return;
+  const map = new Map(Object.entries(window.PHRASEMAP_LEGACY_IDS || {}));
+  for (const n of ['progress', 'notes']) {
+    for (const rec of await all(n)) {
+      const nid = map.get(rec.id);
+      if (nid && !(await get(n, nid))) { await put(n, { ...rec, id: nid }); await del(n, rec.id); }
+    }
+  }
+  for (const m of await all('media')) { const nid = map.get(m.phraseId); if (nid) await put('media', { ...m, phraseId: nid }); }
+  await put('meta', { id: 'legacy-ids-v3', at: Date.now() });
+}
+async function loadEntries() {
+  const local = await all('phrases');
+  const localIds = new Set(local.map(x => x.id));
+  entries = [...seed.filter(s => !localIds.has(s.id)), ...local];
+}
+const findEntry = id => entries.find(x => x.id === id);
+
+// ───────── Android 原生橋接（AI 金鑰只存在 App 內，網頁讀不到） ─────────
+const NATIVE = window.PhraseMapNative || null;
+const AI_ENABLED = !!NATIVE;
+const pending = new Map();
+window.__phNative = {
+  resolve(id, payload) {
+    const p = pending.get(id);
+    if (!p) return;
+    pending.delete(id);
+    let data;
+    try { data = typeof payload === 'string' ? JSON.parse(payload) : payload; } catch (e) { p.no(e); return; }
+    if (data && data.ok === false) p.no(new Error(data.error || '原生呼叫失敗')); else p.ok(data);
+  },
+};
+function nativeCall(method, ...args) {
+  return new Promise((ok, no) => {
+    if (!NATIVE || typeof NATIVE[method] !== 'function') { no(new Error('此功能需要 Android App')); return; }
+    const id = uuid();
+    pending.set(id, { ok, no });
+    try { NATIVE[method](id, ...args); } catch (e) { pending.delete(id); no(e); }
+  });
+}
+
+// ───────── AI 模型清單：遠端 → 快取 → 內建 ─────────
+const CATALOG_URL = 'https://raw.githubusercontent.com/yichincho/ai-models/main/models.json';
+const PROVIDERS = ['GEMINI', 'NVIDIA', 'DEEPSEEK'];
+let catalog = null;
+let catalogSource = '';
+function validCatalog(c) { return c && c.schemaVersion === 1 && c.providers && typeof c.providers === 'object'; }
+async function loadCatalog(force = false) {
+  const cached = await get('meta', 'models-cache');
+  if (!force && cached && Date.now() - cached.at < 86400000 && validCatalog(cached.data)) { catalog = cached.data; catalogSource = '快取'; return; }
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 8000);
+    const res = await fetch(CATALOG_URL, { signal: ctl.signal, cache: 'no-store' });
+    clearTimeout(t);
+    const data = await res.json();
+    if (!validCatalog(data)) throw new Error('格式不符');
+    await put('meta', { id: 'models-cache', at: Date.now(), data });
+    catalog = data; catalogSource = '遠端（ai-models）';
+  } catch {
+    if (cached && validCatalog(cached.data)) { catalog = cached.data; catalogSource = '快取（遠端無法連線）'; }
+    else { catalog = window.PHRASEMAP_MODELS; catalogSource = '內建備援'; }
+  }
+}
+async function aiSettings() { return (await get('settings', 'ai')) || { id: 'ai', provider: 'GEMINI', models: {} }; }
+function modelChoices(provider) {
+  const spec = catalog && catalog.providers[provider];
+  if (!spec) return [];
+  const list = (spec.models || []).filter(m => m.status !== 'fail');
+  return [...list.filter(m => m.status === 'ok'), ...list.filter(m => m.status !== 'ok')];
+}
+function currentModel(settings) {
+  const spec = catalog.providers[settings.provider];
+  return (settings.models && settings.models[settings.provider]) || (spec && spec.recommended) || (modelChoices(settings.provider)[0] || {}).id;
+}
+function httpHint(status) {
+  return ({ 400: '請求格式錯誤', 401: '金鑰無效', 403: '金鑰無權使用此模型', 404: '模型不存在或已下架，請換模型', 410: '模型已停用，請換模型', 429: '太頻繁或額度用完，請稍後再試', 500: '服務端錯誤', 502: '服務暫時不可用', 503: '服務忙碌' })[status] || '';
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function aiChat({ system, user, json = true }) {
+  if (!AI_ENABLED) throw new Error('AI 功能僅在 Android App 中提供');
+  if (!catalog) await loadCatalog();
+  const settings = await aiSettings();
+  const provider = settings.provider;
+  const spec = catalog.providers[provider];
+  if (!spec) throw new Error('模型清單沒有 ' + provider);
+  const model = currentModel(settings);
+  if (!model) throw new Error('請先在「AI 設定」選擇模型');
+  let path, body;
+  if (spec.format === 'gemini') {
+    path = '/v1beta/models/' + model + ':generateContent';
+    body = { systemInstruction: { parts: [{ text: system }] }, contents: [{ role: 'user', parts: [{ text: user }] }], generationConfig: { temperature: 0.7 } };
+    if (json) body.generationConfig.responseMimeType = 'application/json';
+  } else {
+    path = '/chat/completions';
+    body = { model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }], temperature: 0.7, max_tokens: 4096 };
+    if (json && provider === 'DEEPSEEK') body.response_format = { type: 'json_object' };
+  }
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await nativeCall('aiRequest', provider, path, JSON.stringify(body), 90000);
+    if (res.status >= 200 && res.status < 300) {
+      const data = JSON.parse(res.body);
+      let text;
+      if (spec.format === 'gemini') text = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || []).filter(p => !p.thought).map(p => p.text || '').join('');
+      else text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+      if (!text) throw new Error('AI 沒有回覆內容');
+      return { text, data: json ? C.extractJson(text) : null, provider, model };
+    }
+    let detail = '';
+    try { const e = JSON.parse(res.body); detail = (e.error && (e.error.message || e.error)) || e.detail || e.message || ''; } catch { detail = String(res.body || '').slice(0, 160); }
+    lastErr = new Error('HTTP ' + res.status + ' ' + httpHint(res.status) + (detail ? '：' + detail : ''));
+    if (![429, 500, 502, 503].includes(res.status)) break;
+    await sleep(attempt === 0 ? 1500 : 4000);
+  }
+  throw lastErr;
+}
+
+// ───────── 介面 ─────────
+function nav() {
+  const names = [['map', '意象地圖'], ['library', '片語庫'], ['quiz', '牌卡複習'], ['images', '圖片與筆記']];
+  if (AI_ENABLED) names.push(['articles', 'AI 文章'], ['ai', 'AI 設定']);
+  names.push(['backup', '備份／匯入']);
+  $('nav').innerHTML = names.map(x => '<button class="' + (state.tab === x[0] ? 'active' : '') + '" data-tab="' + x[0] + '">' + x[1] + '</button>').join('');
+  document.querySelectorAll('[data-tab]').forEach(x => x.onclick = () => { state.tab = x.dataset.tab; render(); });
+}
+function render() {
+  nav();
+  ({ map: mapView, library: libraryView, quiz: quizView, images: imagesView, articles: articlesView, ai: aiView, backup: backupView }[state.tab] || mapView)();
+}
+const openBtn = p => '<button class="secondary" data-open="' + esc(p.id) + '">查看／製作牌卡</button>';
+function bindLinks() { document.querySelectorAll('[data-open]').forEach(x => x.onclick = () => detail(x.dataset.open)); }
+
+function mapView() {
+  const list = entries.filter(p => p.group === state.group);
+  const info = groupInfo(state.group);
+  const branches = [...new Set(list.map(p => p.branch || '其他'))];
+  const showCompare = state.group === 'ABOUT' || state.group === '(A)ROUND';
+  $('view').innerHTML =
+    '<section class="hero"><h2>17 個核心小詞</h2><p class="sub">從「空間 → 時間／狀態 → 抽象語意」建立記憶路徑。認知解釋為原創教學聯想，非原書全文。</p></section>' +
+    '<div class="grid">' + GROUPS.map(g => '<button class="tile' + (g[0] === state.group ? ' selected' : '') + '" data-group="' + esc(g[0]) + '"><strong>' + esc(g[0]) + '</strong><span>' + esc(g[1]) + '</span><span class="sub">' + entries.filter(x => x.group === g[0]).length + ' 個片語意義</span></button>').join('') + '</div>' +
+    '<section class="panel" style="margin-top:16px"><h2>' + esc(info[0]) + '：' + esc(info[1]) + '</h2><div class="meaning">' + esc(info[2]) + '</div>' +
+    (showCompare ? '<div class="banner"><b>' + esc(COMPARISON.title) + '</b><br>' + esc(COMPARISON.text) + '</div>' : '') +
+    branches.map(b => '<h3 style="margin-top:16px">' + esc(b) + '</h3>' + list.filter(p => (p.branch || '其他') === b).map(p => '<div class="list-row"><div><b>' + esc(p.phrase) + '</b>　' + esc(p.zh) + (p.user ? ' <span class="pill">自建</span>' : '') + '<div class="sub">' + esc(p.hint) + '</div></div>' + openBtn(p) + '</div>').join('')).join('') +
+    '</section>';
+  document.querySelectorAll('[data-group]').forEach(x => x.onclick = () => { state.group = x.dataset.group; render(); });
+  bindLinks();
+}
+
+function libraryView() {
+  const f = state.libFilter.toLowerCase();
+  const rows = entries.filter(p => (!state.libGroup || p.group === state.libGroup) && (p.phrase + ' ' + p.zh + ' ' + p.group + ' ' + (p.hint || '')).toLowerCase().includes(f));
+  $('view').innerHTML =
+    '<div class="row between"><h2>片語知識庫</h2><button id="newEntry">＋ 自行新增片語</button></div>' +
+    '<div class="columns"><input id="search" placeholder="搜尋英文、中文或小詞" value="' + esc(state.libFilter) + '"><select id="libGroup"><option value="">全部 17 個小詞</option>' + GROUPS.map(g => '<option value="' + esc(g[0]) + '"' + (state.libGroup === g[0] ? ' selected' : '') + '>' + esc(g[0]) + '</option>').join('') + '</select></div>' +
+    '<p class="sub">共 ' + entries.length + ' 個片語意義（預載 ' + seed.length + '，自建 ' + entries.filter(x => x.user).length + '）；顯示 ' + rows.length + ' 筆。自建資料不會被程式更新覆蓋。預載資料為 AI 輔助整理，尚待人工校對。</p>' +
+    '<div class="grid">' + rows.map(p => '<article class="panel"><span class="pill">' + esc(p.group) + '</span>' + (p.branch ? '<span class="pill">' + esc(p.branch) + '</span>' : '') + '<h3>' + esc(p.phrase) + '</h3><div>' + esc(p.zh) + '</div><div class="sub">' + esc(p.hint) + '</div>' + openBtn(p) + '</article>').join('') + '</div>';
+  $('search').oninput = e => { state.libFilter = e.target.value; libraryView(); const s = $('search'); s.focus(); s.setSelectionRange(s.value.length, s.value.length); };
+  $('libGroup').onchange = e => { state.libGroup = e.target.value; libraryView(); };
+  $('newEntry').onclick = addEntry;
+  bindLinks();
+}
+
+function addEntry() {
+  $('view').innerHTML = '<div class="panel"><h2>新增個人片語</h2><label>所屬小詞</label><select id="ag">' + GROUPS.map(g => '<option' + (g[0] === state.group ? ' selected' : '') + '>' + esc(g[0]) + '</option>').join('') + '</select>' +
+    '<label>英文片語</label><input id="ap" placeholder="例：brush up on"><label>中文意思（一張卡只填一種語意）</label><input id="az">' +
+    '<label>語意分支</label><select id="ab">' + ['空間', '時間', '狀態', '程度', '完成', '情緒', '慣用'].map(b => '<option>' + b + '</option>').join('') + '</select>' +
+    '<label>認知聯想</label><textarea id="ah"></textarea><label>英文例句</label><textarea id="ae"></textarea>' +
+    '<div class="toolbar"><button id="save">儲存到本機</button><button class="secondary" id="cancel">取消</button></div><div id="msg" role="status"></div></div>';
+  $('cancel').onclick = render;
+  $('save').onclick = async () => {
+    const phrase = $('ap').value.trim().replace(/\s+/g, ' '), zh = $('az').value.trim();
+    if (!phrase || !zh) { $('msg').textContent = '英文與中文不能留空'; return; }
+    await put('phrases', { id: 'user:' + uuid(), group: $('ag').value, phrase, zh, branch: $('ab').value, hint: $('ah').value, example: $('ae').value, user: true, createdAt: Date.now() });
+    await loadEntries();
+    state.tab = 'library'; render();
+  };
+}
+
+async function detail(id) {
+  const p = findEntry(id);
+  if (!p) return;
+  const imgs = (await all('media')).filter(m => m.phraseId === id);
+  const note = await get('notes', id);
+  const prog = await get('progress', id);
+  const arts = AI_ENABLED ? (await all('articles')).filter(a => (a.phraseIds || []).includes(id)) : [];
+  $('view').innerHTML = '<button class="secondary" id="back">← 返回</button><article class="panel" style="margin-top:12px">' +
+    '<span class="pill">' + esc(p.group) + '</span>' + (p.branch ? '<span class="pill">' + esc(p.branch) + '</span>' : '') + (p.separable ? '<span class="pill">可分離</span>' : '') + (p.user ? '<span class="pill">自建</span>' : '<span class="pill warn">待人工校對</span>') +
+    '<h2>' + esc(p.phrase) + '</h2><h3>' + esc(p.zh) + '</h3><div class="meaning">' + esc(p.hint) + '</div><p>' + C.highlight(p.example, p.phrase) + '</p>' +
+    '<p class="sub">複習：' + (prog ? '作答 ' + prog.attempts + ' 次、答對 ' + prog.correct + ' 次、下次 ' + (C.isDue(prog) ? '現在' : new Date(prog.due).toLocaleDateString('zh-TW')) : '尚未複習') + '</p>' +
+    (AI_ENABLED ? '<div class="toolbar"><button id="aiExplain">AI 解說此片語</button></div><div id="aiOut"></div>' : '') +
+    '<div class="columns"><section><h3>個人筆記</h3><textarea id="note" rows="5" placeholder="自己理解的空間畫面與例句">' + esc(note?.text || '') + '</textarea><button id="saveNote">儲存筆記</button>' +
+    '<h3>生成教學圖片提示詞</h3><p class="sub">複製到圖像工具產生圖片後，再上傳回來。</p><button class="secondary" id="prompt">複製中國竹風 Prompt</button><div id="notice" class="sub"></div></section>' +
+    '<section><h3>我的圖片（' + imgs.length + '）</h3><input id="upload" type="file" accept="image/png,image/jpeg,image/webp"><div class="grid" id="photos">' +
+    imgs.map(m => '<div><img class="thumb" src="' + URL.createObjectURL(m.blob) + '" alt="個人記憶圖"><button class="secondary" data-remove="' + esc(m.id) + '">刪除此圖片</button></div>').join('') + '</div></section></div>' +
+    (arts.length ? '<h3>使用此片語的文章</h3>' + arts.map(a => '<div class="list-row"><span>' + esc(a.title) + '</span><button class="secondary" data-article="' + esc(a.id) + '">閱讀</button></div>').join('') : '') +
+    (p.user ? '<div class="toolbar"><button class="secondary" id="deleteEntry">刪除個人片語（連同筆記與圖片）</button></div>' : '') + '</article>';
+  $('back').onclick = render;
+  $('saveNote').onclick = async () => { await put('notes', { id, text: $('note').value, updatedAt: Date.now() }); $('notice').textContent = '筆記已儲存'; };
+  $('prompt').onclick = () => copyText(imagePrompt(p), $('notice'));
+  $('upload').onchange = async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) || f.size > 8 * 1024 * 1024) { alert('僅允許 PNG/JPEG/WebP 且小於 8MB'); return; }
+    await put('media', { id: uuid(), phraseId: id, name: f.name, blob: f, createdAt: Date.now() });
+    detail(id);
+  };
+  document.querySelectorAll('[data-remove]').forEach(x => x.onclick = async () => { if (confirm('確定刪除這張圖片？')) { await del('media', x.dataset.remove); detail(id); } });
+  document.querySelectorAll('[data-article]').forEach(x => x.onclick = () => readArticle(x.dataset.article));
+  if (p.user) $('deleteEntry').onclick = async () => {
+    if (!confirm('確定刪除此片語？相關筆記、圖片與複習紀錄也會一併刪除（建議先備份）。')) return;
+    for (const m of imgs) await del('media', m.id);
+    await del('notes', id); await del('progress', id); await del('phrases', id);
+    await loadEntries(); state.tab = 'library'; render();
+  };
+  if (AI_ENABLED) $('aiExplain').onclick = () => aiExplain(p);
+}
+function imagePrompt(p) {
+  return '請製作繁體中文英文片語認知資訊圖。片語：' + p.phrase + '；意思：' + p.zh + '；核心小詞：' + p.group + '（' + groupInfo(p.group)[1] + '）；語意分支：' + (p.branch || '') + '。意象：' + (p.hint || '') + '。例句：' + (p.example || '') +
+    '。用「起始 → 變化 → 結果」呈現空間到抽象語意。採 editorial-infographic-tw：米白紙張 #F4F1E9、深墨綠 #274735、灰綠 #7A9276，搭配節制的中國竹葉水墨裝飾、清晰繁體字、雜誌式排版、留白、正確英文拼字，避免霓虹與重複卡框。';
+}
+async function copyText(text, out) {
+  try {
+    if (NATIVE && NATIVE.copyText) NATIVE.copyText(text); else await navigator.clipboard.writeText(text);
+    out.textContent = '已複製';
+  } catch { out.textContent = text; }
+}
+
+async function aiExplain(p) {
+  const out = $('aiOut');
+  out.innerHTML = '<p class="sub">AI 解說產生中…</p>';
+  try {
+    const r = await aiChat({
+      system: '你是台灣的英語教師，用認知語言學（空間意象）解說英文片語動詞。只輸出 JSON，所有中文用台灣繁體中文。',
+      user: '片語：' + p.phrase + '\n小詞：' + p.group + '（' + groupInfo(p.group)[2] + '）\n目前教學的意思：' + p.zh + '\n請輸出 JSON：{"core_image":"一句話描述空間畫面","explanation":"3-4 句說明如何從空間延伸到這個意思","examples":[{"en":"英文例句","zh":"中文翻譯"}],"usage_note":"可分離性、受詞位置、常見錯誤"}，examples 3 句，例句必須使用這個意思。',
+    });
+    const d = r.data || {};
+    const ex = Array.isArray(d.examples) ? d.examples : [];
+    out.innerHTML = '<div class="meaning"><b>空間畫面：</b>' + esc(d.core_image) + '<p>' + esc(d.explanation) + '</p>' + ex.map(e => '<p>' + C.highlight(e.en, p.phrase) + '<br><span class="sub">' + esc(e.zh) + '</span></p>').join('') + '<p class="sub">' + esc(d.usage_note) + '</p><p class="sub">來源：' + esc(r.provider + ' / ' + r.model) + '（AI 內容請自行確認）</p><button class="secondary" id="aiToNote">加入個人筆記</button></div>';
+    $('aiToNote').onclick = async () => {
+      const text = ($('note').value ? $('note').value + '\n\n' : '') + '【AI 解說】' + (d.core_image || '') + '\n' + (d.explanation || '') + '\n' + ex.map(e => e.en + '（' + e.zh + '）').join('\n');
+      $('note').value = text;
+      await put('notes', { id: p.id, text, updatedAt: Date.now() });
+      $('notice').textContent = '已加入筆記';
+    };
+  } catch (e) { out.innerHTML = '<div class="banner">AI 解說失敗：' + esc(e.message) + '</div>'; }
+}
+
+// ───────── 牌卡複習（Leitner 間隔 + 答錯再練） ─────────
+const shuffle = a => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+async function quizView() {
+  const quiz = state.quiz;
+  if (!quiz) {
+    const progress = new Map((await all('progress')).map(x => [x.id, x]));
+    const dueCount = entries.filter(e => progress.has(e.id) && C.isDue(progress.get(e.id))).length;
+    const wrongCount = entries.filter(e => (progress.get(e.id)?.box ?? 1) === 0).length;
+    $('view').innerHTML = '<div class="panel"><h2>Anki 風格記憶複習</h2><p>先看英文，再選中文；或翻卡自評。答對的卡依間隔（1、2、4、8、16、32 天）延後，答錯會在本回合最後再練一次。</p>' +
+      '<label>範圍</label><select id="qscope"><option value="group">指定小詞</option><option value="due">到期卡片（' + dueCount + '）</option><option value="wrong">最近答錯（' + wrongCount + '）</option><option value="new">全部新卡</option></select>' +
+      '<label>選擇小詞</label><select id="qgroup">' + GROUPS.map(g => '<option value="' + esc(g[0]) + '"' + (state.group === g[0] ? ' selected' : '') + '>' + esc(g[0]) + ' · ' + esc(g[1]) + '</option>').join('') + '</select>' +
+      '<label>模式</label><select id="qmode"><option value="multiple">隨機中文四選一</option><option value="flip">翻卡自評</option></select>' +
+      '<label>題數</label><select id="qcount"><option>10</option><option selected>20</option><option>30</option></select><div class="toolbar"><button id="start">開始複習</button></div></div>';
+    $('start').onclick = () => {
+      const scope = $('qscope').value;
+      state.group = $('qgroup').value;
+      let pool;
+      if (scope === 'group') pool = entries.filter(x => x.group === state.group);
+      else if (scope === 'due') pool = entries.filter(e => progress.has(e.id) && C.isDue(progress.get(e.id)));
+      else if (scope === 'wrong') pool = entries.filter(e => (progress.get(e.id)?.box ?? 1) === 0);
+      else pool = entries.filter(e => !progress.has(e.id));
+      if (!pool.length) { alert('這個範圍目前沒有卡片'); return; }
+      state.quiz = { items: shuffle(pool).slice(0, Number($('qcount').value)), index: 0, correct: 0, answered: false, mode: $('qmode').value, retried: new Set() };
+      quizView();
+    };
+    return;
+  }
+  const p = quiz.items[quiz.index];
+  if (!p) {
+    $('view').innerHTML = '<article class="panel"><h2>練習完成</h2><p>本回合答對 ' + quiz.correct + ' 次，共作答 ' + quiz.items.length + ' 題（含答錯重練）。</p><button id="again">返回練習設定</button></article>';
+    $('again').onclick = () => { state.quiz = null; quizView(); };
+    return;
+  }
+  const sameGroup = shuffle(entries.filter(x => x.group === p.group && x.zh !== p.zh));
+  const others = shuffle(entries.filter(x => x.group !== p.group && x.zh !== p.zh));
+  const distractors = [];
+  for (const x of [...sameGroup, ...others]) { if (distractors.length >= 3) break; if (!distractors.some(d => d.zh === x.zh)) distractors.push(x); }
+  const options = shuffle([p, ...distractors]);
+  const retry = quiz.retried.has(p.id) && quiz.index >= quiz.items.indexOf(p) + 1;
+  $('view').innerHTML = '<article class="panel"><div class="row between"><span class="pill">' + esc(p.group) + '</span>' + (retry ? '<span class="pill warn">答錯再練</span>' : '') + '<span class="sub">第 ' + (quiz.index + 1) + ' / ' + quiz.items.length + ' 題　答對 ' + quiz.correct + '</span></div>' +
+    '<h2 style="font-size:2.1rem;text-align:center;margin:35px 0">' + esc(p.phrase) + '</h2>' +
+    (quiz.mode === 'flip'
+      ? '<div class="row"><button id="flip">翻面顯示答案</button></div><div class="hidden meaning" id="answer">' + esc(p.zh) + '<p>' + esc(p.hint) + '</p><p>' + C.highlight(p.example, p.phrase) + '</p><button id="self0" class="secondary">忘記</button> <button id="self1">記得</button></div>'
+      : '<p>請選擇正確中文意思：</p><div class="options">' + options.map(x => '<button data-choice="' + esc(x.id) + '">' + esc(x.zh) + '</button>').join('') + '</div><div id="feedback" class="hidden meaning"></div><button id="next" class="hidden">下一題 →</button>') +
+    '</article>';
+  if (quiz.mode === 'flip') {
+    $('flip').onclick = () => { $('answer').classList.remove('hidden'); $('flip').disabled = true; };
+    const self = ok => { $('self0').disabled = $('self1').disabled = true; answer(ok, p, true); };
+    $('self0').onclick = () => self(false);
+    $('self1').onclick = () => self(true);
+  } else {
+    document.querySelectorAll('[data-choice]').forEach(x => x.onclick = () => {
+      if (quiz.answered) return;
+      quiz.answered = true;
+      const ok = x.dataset.choice === p.id;
+      document.querySelectorAll('[data-choice]').forEach(b => { b.disabled = true; if (b.dataset.choice === p.id) b.classList.add('correct'); else if (b === x) b.classList.add('wrong'); });
+      $('feedback').classList.remove('hidden');
+      $('feedback').innerHTML = (ok ? '答對了！' : '答錯了，正解：' + esc(p.zh) + '（本回合最後再練一次）') + '<p>' + esc(p.hint) + '</p><p>' + C.highlight(p.example, p.phrase) + '</p>';
+      $('next').classList.remove('hidden');
+      answer(ok, p, false);
+    });
+    $('next').onclick = () => { quiz.index++; quiz.answered = false; quizView(); };
+  }
+}
+async function answer(ok, p, advance) {
+  const quiz = state.quiz;
+  const prev = await get('progress', p.id);
+  await put('progress', { id: p.id, ...C.schedule(prev, ok) });
+  if (ok) quiz.correct++;
+  else if (!quiz.retried.has(p.id)) { quiz.retried.add(p.id); quiz.items.push(p); }
+  if (advance) { quiz.index++; quizView(); }
+}
+
+async function imagesView() {
+  const imgs = await all('media'), notes = await all('notes');
+  $('view').innerHTML = '<h2>個人記憶圖與筆記</h2><p class="sub">圖片保存在此裝置的 IndexedDB，而不是程式檔案中；更新程式不會清除。清除網站／App 資料或換裝置仍會遺失，請定期匯出備份。</p>' +
+    '<div class="banner">共 ' + imgs.length + ' 張圖片、' + notes.length + ' 筆筆記。進入片語頁面上傳圖片。</div><div class="grid" style="margin-top:14px">' +
+    imgs.map(m => { const p = findEntry(m.phraseId); return '<article class="panel"><img class="thumb" src="' + URL.createObjectURL(m.blob) + '" alt="' + esc(m.name) + '"><h3>' + esc(p?.phrase || '未找到片語') + '</h3><button class="secondary" data-open="' + esc(m.phraseId) + '">查看</button></article>'; }).join('') + '</div>';
+  bindLinks();
+}
+
+// ───────── AI 設定（僅 Android App） ─────────
+async function aiView() {
+  if (!catalog) await loadCatalog();
+  const s = await aiSettings();
+  const keys = {};
+  for (const p of PROVIDERS) { try { keys[p] = !!NATIVE.hasKey(p); } catch { keys[p] = false; } }
+  const spec = catalog.providers[s.provider] || {};
+  const model = currentModel(s);
+  $('view').innerHTML = '<div class="panel"><h2>AI 設定</h2><p class="sub">API 金鑰只用 Android Keystore 加密存在這支手機，網頁程式讀不到，也不會寫進備份檔或 GitHub。</p>' +
+    '<label>服務商</label><select id="prov">' + PROVIDERS.filter(p => catalog.providers[p]).map(p => '<option value="' + p + '"' + (p === s.provider ? ' selected' : '') + '>' + esc(catalog.providers[p].label || p) + (keys[p] ? '（已設定金鑰）' : '（未設定金鑰）') + '</option>').join('') + '</select>' +
+    '<div class="toolbar"><button id="setKey">設定／更換 ' + esc(spec.label || s.provider) + ' 金鑰</button><button class="secondary" id="clearKey">清除金鑰</button></div>' +
+    '<label>模型</label><select id="model">' + modelChoices(s.provider).map(m => '<option value="' + esc(m.id) + '"' + (m.id === model ? ' selected' : '') + '>' + esc(m.id) + (m.id === spec.recommended ? '（推薦）' : '') + (m.status === 'ok' ? ' ✓' : m.status === 'unknown' ? '（未實測）' : m.status === 'busy' ? '（忙碌）' : '') + '</option>').join('') + '</select>' +
+    '<label>或自行輸入模型 ID</label><input id="customModel" placeholder="留空則使用上方選單" value="' + esc(modelChoices(s.provider).some(m => m.id === model) ? '' : model || '') + '">' +
+    '<div class="toolbar"><button id="saveModel">儲存模型</button><button class="secondary" id="test">測試連線</button><button class="secondary" id="refresh">重新下載模型清單</button></div>' +
+    '<p class="sub">模型清單來源：' + esc(catalogSource) + '（更新日 ' + esc(catalog.updatedAt || '?') + '）。「未實測」代表 ai-models 尚未驗證，第一次使用請先測試連線。</p><div id="aiStatus" role="status"></div></div>';
+  $('prov').onchange = async e => { s.provider = e.target.value; await put('settings', s); aiView(); };
+  $('setKey').onclick = async () => { try { await nativeCall('promptKey', s.provider); aiView(); } catch (e) { $('aiStatus').textContent = e.message; } };
+  $('clearKey').onclick = async () => { if (confirm('確定清除 ' + s.provider + ' 金鑰？')) { NATIVE.clearKey(s.provider); aiView(); } };
+  $('saveModel').onclick = async () => { s.models = s.models || {}; s.models[s.provider] = $('customModel').value.trim() || $('model').value; await put('settings', s); $('aiStatus').textContent = '已儲存：' + s.models[s.provider]; };
+  $('refresh').onclick = async () => { await loadCatalog(true); aiView(); };
+  $('test').onclick = async () => {
+    $('aiStatus').textContent = '測試中…';
+    try { const r = await aiChat({ system: 'Reply with JSON only.', user: 'Return {"ok":true}', json: true }); $('aiStatus').textContent = '連線成功：' + r.provider + ' / ' + r.model; }
+    catch (e) { $('aiStatus').textContent = '連線失敗：' + e.message; }
+  };
+}
+
+// ───────── AI 系列文章 ─────────
+async function articlesView() {
+  const arts = (await all('articles')).sort((a, b) => (b.createdAt - a.createdAt) || (a.order - b.order));
+  const series = [...new Map(arts.map(a => [a.seriesId, a.seriesTitle])).entries()];
+  const groupEntries = entries.filter(e => e.group === state.group);
+  $('view').innerHTML = '<div class="panel"><h2>生成系列文章</h2><p class="sub">選 5–12 個目標片語，AI 先排大綱再逐篇寫作；程式用 token 位置標出動詞（紅色）與小詞（底線），沒用到的片語會標為待審核。</p>' +
+    '<label>小詞</label><select id="agroup">' + GROUPS.map(g => '<option' + (g[0] === state.group ? ' selected' : '') + '>' + esc(g[0]) + '</option>').join('') + '</select>' +
+    '<label>目標片語（已選 <span id="pickCount">0</span>）</label><div class="checks">' + groupEntries.map((e, i) => '<label><input type="checkbox" value="' + esc(e.id) + '"' + (i < 6 ? ' checked' : '') + '> ' + esc(e.phrase) + '・' + esc(e.zh) + '</label>').join('') + '</div>' +
+    '<div class="columns"><div><label>主題</label><input id="topic" placeholder="例：大學新生的第一學期"></div><div><label>難度</label><select id="level"><option>A2</option><option selected>B1</option><option>B2</option></select></div>' +
+    '<div><label>篇數</label><select id="count"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div><div><label>每篇字數</label><select id="words"><option>120</option><option selected>200</option><option>300</option></select></div></div>' +
+    '<div class="toolbar"><button id="gen">開始生成</button></div><div id="genLog" class="progress-log"></div></div>' +
+    '<h2 style="margin-top:22px">閱讀庫</h2>' + (series.length ? series.map(([sid, title]) => '<div class="panel" style="margin-bottom:10px"><h3>' + esc(title) + '</h3>' + arts.filter(a => a.seriesId === sid).sort((a, b) => a.order - b.order).map(a => '<div class="list-row"><span>' + (a.order + 1) + '. ' + esc(a.title) + ' ' + (a.status === 'ok' ? '' : '<span class="pill warn">待審核</span>') + '</span><button class="secondary" data-article="' + esc(a.id) + '">閱讀</button></div>').join('') + '</div>').join('') : '<p class="sub">尚無文章。</p>');
+  const updateCount = () => { $('pickCount').textContent = document.querySelectorAll('.checks input:checked').length; };
+  updateCount();
+  document.querySelectorAll('.checks input').forEach(x => x.onchange = updateCount);
+  $('agroup').onchange = e => { state.group = e.target.value; articlesView(); };
+  document.querySelectorAll('[data-article]').forEach(x => x.onclick = () => readArticle(x.dataset.article));
+  $('gen').onclick = async () => {
+    const ids = [...document.querySelectorAll('.checks input:checked')].map(x => x.value);
+    if (ids.length < 5 || ids.length > 12) { alert('請選 5–12 個片語'); return; }
+    $('gen').disabled = true;
+    try { await generateSeries({ ids, topic: $('topic').value.trim() || '日常生活', level: $('level').value, count: Number($('count').value), words: Number($('words').value), log: m => { const el = $('genLog'); if (el) el.textContent += m + '\n'; } }); if (state.tab === 'articles') articlesView(); }
+    catch (e) { const el = $('genLog'); if (el) el.textContent += '失敗：' + e.message + '\n'; const g = $('gen'); if (g) g.disabled = false; else alert('文章生成失敗：' + e.message); }
+  };
+}
+const phraseList = ids => ids.map(id => findEntry(id)).filter(Boolean).map(e => '- id=' + e.id + '｜' + e.phrase + '｜意思：' + e.zh).join('\n');
+const ARTICLE_SYSTEM = '你是英語閱讀教材作者，替台灣學習者寫自然的英文短文。只輸出 JSON。英文要自然、語法正確；指定片語必須用「指定的中文意思」，動詞可依時態變化，可分離片語可夾受詞。';
+
+async function generateSeries({ ids, topic, level, count, words, log }) {
+  log('步驟 1／' + (count + 1) + '：AI 規劃系列大綱…');
+  const outline = await aiChat({
+    system: ARTICLE_SYSTEM,
+    user: '請為主題「' + topic + '」規劃 ' + count + ' 篇連續的 ' + level + ' 程度英文短文系列。目標片語：\n' + phraseList(ids) +
+      '\n每個片語至少要出現在一篇。輸出 JSON：{"series_title":"中文系列名稱","articles":[{"title":"英文標題","summary":"中文一句摘要","phrase_ids":["上方的 id"]}]}',
+  });
+  let plan = Array.isArray(outline.data.articles) ? outline.data.articles.slice(0, count) : [];
+  while (plan.length < count) plan.push({ title: topic + ' ' + (plan.length + 1), summary: '', phrase_ids: [] });
+  const valid = new Set(ids);
+  plan.forEach(a => { a.phrase_ids = (Array.isArray(a.phrase_ids) ? a.phrase_ids : []).filter(x => valid.has(x)); });
+  ids.forEach((id, i) => { if (!plan.some(a => a.phrase_ids.includes(id))) plan[i % plan.length].phrase_ids.push(id); });
+  const seriesId = uuid();
+  const seriesTitle = String(outline.data.series_title || topic);
+  const createdAt = Date.now();
+  for (let i = 0; i < plan.length; i++) {
+    log('步驟 ' + (i + 2) + '／' + (count + 1) + '：撰寫第 ' + (i + 1) + ' 篇「' + plan[i].title + '」…');
+    const art = { id: uuid(), seriesId, seriesTitle, order: i, topic, level, words, plan: plan[i], createdAt };
+    await writeArticle(art, plan.slice(0, i).map(a => a.summary).join('；'));
+    log('  ' + (art.status === 'ok' ? '完成，所有目標片語都已標註' : '完成，但有 ' + art.issues.length + ' 個片語待審核'));
+  }
+}
+async function writeArticle(art, previous) {
+  const r = await aiChat({
+    system: ARTICLE_SYSTEM,
+    user: '系列主題：' + art.topic + '；程度 ' + art.level + '；約 ' + art.words + ' 字。\n本篇標題：' + art.plan.title + '\n本篇摘要：' + art.plan.summary + (previous ? '\n前面各篇摘要（保持人物與情節連貫）：' + previous : '') +
+      '\n本篇必須使用的片語（每個至少一次，使用指定意思）：\n' + phraseList(art.plan.phrase_ids) +
+      '\n輸出 JSON：{"title":"英文標題","paragraphs":["英文段落"],"glossary_zh":"全文中文大意（3 句內）"}',
+  });
+  const d = r.data || {};
+  art.title = String(d.title || art.plan.title);
+  art.text = (Array.isArray(d.paragraphs) ? d.paragraphs : [String(d.paragraphs || '')]).map(String).join('\n\n');
+  art.summaryZh = String(d.glossary_zh || '');
+  art.provider = r.provider; art.model = r.model;
+  annotateArticle(art);
+  await put('articles', art);
+  return art;
+}
+function annotateArticle(art) {
+  art.phraseIds = art.plan.phrase_ids;
+  const targets = art.phraseIds.map(id => findEntry(id)).filter(Boolean);
+  art.annotations = C.annotate(art.text, targets);
+  const found = new Set(art.annotations.map(a => a.senseId));
+  art.issues = targets.filter(t => !found.has(t.id)).map(t => t.phrase + ' 未在文中找到（或用法變化太大）');
+  art.status = art.issues.length ? 'needs_review' : 'ok';
+}
+async function readArticle(id, show = true) {
+  const a = await get('articles', id);
+  if (!a) return;
+  const targets = (a.phraseIds || []).map(x => findEntry(x)).filter(Boolean);
+  // 段落以原文位移切開，標註仍以全文 token 位移為準
+  const paras = [];
+  let at = 0;
+  for (const part of a.text.split('\n\n')) { paras.push({ start: at, end: at + part.length }); at += part.length + 2; }
+  $('view').innerHTML = '<button class="secondary" id="back">← 返回閱讀庫</button><article class="panel article" style="margin-top:12px"><span class="pill">' + esc(a.seriesTitle) + '・第 ' + (a.order + 1) + ' 篇</span><span class="pill">' + esc(a.level) + '</span>' + (a.status === 'ok' ? '' : '<span class="pill warn">待審核</span>') +
+    '<h2>' + esc(a.title) + '</h2><label><input type="checkbox" id="toggle"' + (show ? ' checked' : '') + '> 顯示標示（動詞紅色、小詞底線）</label>' +
+    paras.map(p => '<p>' + C.renderAnnotated(a.text.slice(p.start, p.end), (a.annotations || []).filter(x => x.start >= p.start && x.end <= p.end).map(x => ({ ...x, start: x.start - p.start, end: x.end - p.start })), show) + '</p>').join('') +
+    (a.summaryZh ? '<div class="meaning">' + esc(a.summaryZh) + '</div>' : '') +
+    (a.issues && a.issues.length ? '<div class="banner">待審核：' + a.issues.map(esc).join('；') + '</div>' : '') +
+    '<h3>目標片語</h3>' + targets.map(t => '<div class="list-row"><span><b>' + esc(t.phrase) + '</b>　' + esc(t.zh) + '</span>' + openBtn(t) + '</div>').join('') +
+    '<p class="sub">來源：' + esc((a.provider || '') + ' / ' + (a.model || '')) + '・AI 生成內容請自行確認</p>' +
+    '<div class="toolbar"><button class="secondary" id="edit">編輯內文</button><button class="secondary" id="regen">重新生成本篇</button><button class="secondary" id="delArt">刪除</button></div><div id="artMsg" class="sub"></div></article>';
+  $('back').onclick = () => { state.tab = 'articles'; render(); };
+  $('toggle').onchange = e => readArticle(id, e.target.checked);
+  bindLinks();
+  $('delArt').onclick = async () => { if (confirm('確定刪除這篇文章？')) { await del('articles', id); state.tab = 'articles'; render(); } };
+  $('regen').onclick = async () => {
+    $('artMsg').textContent = '重新生成中…';
+    try { await writeArticle(a, ''); readArticle(id); } catch (e) { $('artMsg').textContent = '失敗：' + e.message; }
+  };
+  $('edit').onclick = () => {
+    $('view').innerHTML = '<div class="panel"><h2>編輯：' + esc(a.title) + '</h2><label>標題</label><input id="et" value="' + esc(a.title) + '"><label>內文（段落之間空一行）</label><textarea id="ex" rows="16">' + esc(a.text) + '</textarea><div class="toolbar"><button id="es">儲存並重新標註</button><button class="secondary" id="ec">取消</button></div></div>';
+    $('ec').onclick = () => readArticle(id);
+    $('es').onclick = async () => { a.title = $('et').value.trim() || a.title; a.text = $('ex').value.replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim(); annotateArticle(a); a.editedAt = Date.now(); await put('articles', a); readArticle(id); };
+  };
+}
+
+// ───────── 備份／匯入 ─────────
+function blobToData(blob) { return new Promise((ok, no) => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = () => no(f.error); f.readAsDataURL(blob); }); }
+async function backupView() {
+  $('view').innerHTML = '<article class="panel"><h2>安全備份與還原</h2><p>個人資料存在此裝置，更新程式不會清空。完整備份包含個人片語、筆記、圖片、複習紀錄、AI 文章與設定（<b>不含 API 金鑰</b>）。換手機、清除資料或解除安裝前請先備份。</p>' +
+    '<div class="toolbar"><button id="export">下載完整備份</button><label class="button" style="margin:0">匯入備份<input id="import" type="file" accept=".json,application/json" class="hidden"></label></div>' +
+    '<p class="sub">匯入採合併策略（同 ID 更新），不會先清空既有資料。請只匯入自己的備份檔。</p><div id="status" role="status"></div></article>';
+  $('export').onclick = async () => {
+    try {
+      const payload = { format: 'PhraseMapBackup', version: 3, createdAt: new Date().toISOString(), stores: {} };
+      for (const n of ['phrases', 'progress', 'notes', 'articles', 'settings']) payload.stores[n] = await all(n);
+      payload.stores.media = [];
+      for (const m of await all('media')) payload.stores.media.push({ ...m, blob: await blobToData(m.blob) });
+      const json = JSON.stringify(payload);
+      const name = 'phrasemap-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      if (NATIVE && NATIVE.saveFile) { await nativeCall('saveFile', name, 'application/json', json); $('status').textContent = '備份已儲存'; return; }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      a.download = name; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      $('status').textContent = '備份檔案已準備下載';
+    } catch (e) { $('status').textContent = '備份失敗：' + e.message; }
+  };
+  $('import').onchange = async e => {
+    try {
+      const f = e.target.files[0];
+      if (!f) return;
+      const obj = JSON.parse(await f.text());
+      if (obj.format !== 'PhraseMapBackup' || ![1, 2, 3].includes(obj.version) || !obj.stores || !Array.isArray(obj.stores.phrases)) throw Error('格式不相容');
+      if (!confirm('將合併備份資料到此裝置（同 ID 會更新），確定嗎？')) return;
+      const legacy = new Map(Object.entries(window.PHRASEMAP_LEGACY_IDS || {}));
+      let n = 0;
+      for (const name of ['phrases', 'progress', 'notes', 'media', 'articles', 'settings']) {
+        if (!Array.isArray(obj.stores[name])) continue;
+        for (const rec of obj.stores[name]) {
+          if (!rec || typeof rec.id !== 'string') continue;
+          if ((name === 'progress' || name === 'notes') && legacy.has(rec.id)) rec.id = legacy.get(rec.id);
+          if (name === 'media') {
+            if (legacy.has(rec.phraseId)) rec.phraseId = legacy.get(rec.phraseId);
+            if (typeof rec.blob !== 'string' || !/^data:image\/(png|jpeg|webp);base64,/.test(rec.blob)) continue;
+            rec.blob = await (await fetch(rec.blob)).blob();
+          }
+          if (name === 'settings') { delete rec.key; delete rec.apiKey; }
+          await put(name, rec); n++;
+        }
+      }
+      await loadEntries();
+      $('status').textContent = '匯入完成，已合併 ' + n + ' 筆資料';
+    } catch (err) { $('status').textContent = '匯入失敗：' + err.message; }
+  };
+}
+
+(async () => {
+  try {
+    await openDB();
+    await migrateLegacyIds();
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    await loadEntries();
+    if (!AI_ENABLED) $('footer').innerHTML += ' · <a href="https://github.com/yichincho/preposition/releases/tag/android-latest">下載 Android App</a>';
+    render();
+  } catch (e) {
+    $('view').innerHTML = '<div class="banner">無法啟動本機資料庫：' + esc(e.message) + '。請使用支援 IndexedDB 的現代瀏覽器，並確認不是限制儲存的模式。</div>';
+  }
+})();
+</script>
+</body>
+</html>
