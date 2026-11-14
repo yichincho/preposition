@@ -87,7 +87,7 @@ const NATIVE_MOCK = () => {
   assert(tiles.length === 17 && new Set(tiles).size === 17 && tiles.includes('OUT OF') && !tiles.some(t => t.includes('/')), '17 個不重複小詞入口（含 OUT OF，無比較課入口）');
   const navs = await p.$$eval('[data-tab]', x => x.map(t => t.dataset.tab));
   assert(!navs.includes('ai') && !navs.includes('articles'), '網頁版不顯示 AI 功能');
-  await p.click('[data-group="ABOUT"]');
+  await p.click('[data-group="ABOUT"]'); await p.waitForSelector('#backMap');
   assert(await p.isVisible('text=比較課：ABOUT 與 (A)ROUND'), 'ABOUT 頁面顯示比較課說明');
   await p.evaluate(() => { window.open = (u) => { window.__opened = u; }; });
   await p.click('#gGpt');
@@ -153,9 +153,22 @@ const NATIVE_MOCK = () => {
   assert(await p.inputValue('#note') === 'keep me' && (await p.$$('img.thumb')).length >= 1, '備份 → 清空 → 匯入後完整還原');
   await p.setViewportSize({ width: 375, height: 800 }); await p.click('#back');
   await p.click('[data-tab="map"]'); await p.evaluate(() => window.scrollTo(0, 400));
-  await p.click('[data-group="INTO"]'); await p.waitForTimeout(200);
+  await p.click('[data-group="INTO"]'); await p.waitForSelector('#backMap');
   const top = await p.evaluate(() => [...document.querySelectorAll('h2')].find(h => h.textContent.startsWith('INTO')).getBoundingClientRect().top);
   assert(top >= 0 && top < 800, '手機上點小詞卡片後，片語列表直接出現在畫面中');
+  // 小詞意象圖：直接在意象地圖的小詞頁上傳（多張），不經 AI
+  await p.setInputFiles('#gUpload', [pngPath, pngPath]); await p.waitForFunction(() => document.querySelectorAll('[data-gremove]').length === 2);
+  assert((await p.textContent('#view')).includes('小詞意象圖（2）'), '小詞頁一次上傳 2 張小詞意象圖');
+  await p.reload(); await p.click('[data-group="INTO"]'); await p.waitForSelector('[data-gremove]');
+  assert((await p.$$('[data-gremove]')).length === 2, '重新開啟後小詞意象圖仍在');
+  await p.click('[data-tab="images"]'); await p.waitForSelector('#imgGroup');
+  const sections = await p.$$eval('#view section h2', x => x.map(h => h.textContent));
+  assert(sections.some(t => t.startsWith('INTO')) && sections.some(t => t.startsWith('UP')), '圖片與筆記依小詞分類（INTO、UP）');
+  assert((await p.textContent('#view')).includes('小詞意象圖（2）') && (await p.textContent('#view')).includes('片語圖片'), '分類內區分小詞意象圖與片語圖片');
+  await p.selectOption('#imgGroup', 'INTO');
+  assert((await p.$$eval('#view section h2', x => x.length)) === 1, '可篩選單一小詞');
+  await p.click('[data-opengroup="INTO"]'); await p.waitForSelector('#gUpload');
+  assert((await p.textContent('#view')).includes('INTO：'), '從圖片頁前往小詞頁');
   assert(await p.evaluate(() => document.documentElement.scrollWidth) <= 375, '手機寬度沒有水平捲動');
   await ctx.close();
 
@@ -194,7 +207,7 @@ const NATIVE_MOCK = () => {
   await a.click('#aiToNote'); await a.waitForTimeout(200);
   assert((await a.evaluate(() => get('notes', 'seed:up/give-up'))).text.includes('【AI 解說】'), 'AI 解說可加入筆記');
   // AI 增加片語
-  await a.click('#back'); await a.click('[data-tab="map"]'); await a.click('[data-group="IN"]');
+  await a.click('#back'); await a.click('[data-tab="map"]'); await a.click('[data-group="IN"]'); await a.waitForSelector('#xGen');
   await a.selectOption('#xCount', '5'); await a.click('#xGen'); await a.waitForSelector('#xSave');
   assert(await a.$$eval('[data-x]', x => x.length) === 1 && (await a.textContent('#xOut')).includes('已自動略過 3 個'), 'AI 增加片語：重複、不含小詞、例句錯誤的建議被略過');
   await a.click('#xSave'); await a.waitForFunction(() => /已加入 1 個片語/.test(document.getElementById('xOut')?.textContent || ''));
@@ -204,7 +217,7 @@ const NATIVE_MOCK = () => {
   assert(await a.evaluate(() => entries.some(e => e.phrase === 'cave in')), '重新開啟後 AI 新片語仍在');
   await a.evaluate(() => detail('seed:up/give-up')); await a.waitForSelector('#note');
   // 小詞總覽 Prompt
-  await a.click('#back'); await a.click('[data-tab="map"]'); await a.click('[data-group="OUT OF"]');
+  await a.click('#back'); await a.click('[data-tab="map"]'); await a.click('[data-group="OUT OF"]'); await a.waitForSelector('#gGpt');
   await a.click('#gGpt');
   const gp = await a.evaluate(() => window.__shared);
   assert(gp.pkg === 'com.openai.chatgpt' && gp.text.includes('小詞：OUT OF') && /get out of|drop out of/.test(gp.text), 'App：小詞總覽 Prompt 含空間意象與代表片語');

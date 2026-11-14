@@ -262,8 +262,9 @@ function mapView() {
     '<div class="grid tiles">' + GROUPS.map(g => '<button class="tile" data-group="' + esc(g[0]) + '"><strong>' + esc(g[0]) + '</strong><span>' + esc(g[1]) + '</span><span class="sub">' + entries.filter(x => x.group === g[0]).length + ' 個片語意義</span></button>').join('') + '</div>';
   document.querySelectorAll('[data-group]').forEach(x => x.onclick = () => { state.group = x.dataset.group; state.groupOpen = true; render(); window.scrollTo(0, 0); });
 }
-function groupView() {
+async function groupView() {
   const list = entries.filter(p => p.group === state.group);
+  const gimgs = (await all('media')).filter(m => m.group === state.group && !m.phraseId);
   const info = groupInfo(state.group);
   const branches = [...new Set(list.map(p => p.branch || '其他'))];
   const showCompare = state.group === 'ABOUT' || state.group === '(A)ROUND';
@@ -271,6 +272,9 @@ function groupView() {
     '<section class="panel" style="margin-top:12px"><h2>' + esc(info[0]) + '：' + esc(info[1]) + '</h2><div class="meaning">' + esc(info[2]) + '</div>' +
     (showCompare ? '<div class="banner"><b>' + esc(COMPARISON.title) + '</b><br>' + esc(COMPARISON.text) + '</div>' : '') +
     '<h3>小詞總覽圖 Prompt</h3><p class="sub">把「' + esc(info[0]) + '」的空間意象與語意分支整理成一張資訊圖。</p>' + promptButtons('g') + '<div id="gnotice" class="sub"></div>' +
+    '<h3>小詞意象圖（' + gimgs.length + '）</h3><p class="sub">把 ChatGPT 產生的圖片直接上傳到這裡，會綁定在「' + esc(info[0]) + '」，不經過 AI、不花 token。可一次選多張。</p>' +
+    '<input id="gUpload" type="file" accept="image/png,image/jpeg,image/webp" multiple><div class="grid" style="margin-top:10px">' +
+    gimgs.map(m => '<div><img class="thumb" src="' + URL.createObjectURL(m.blob) + '" alt="' + esc(info[0]) + ' 意象圖"><button class="secondary" data-gremove="' + esc(m.id) + '">刪除此圖片</button></div>').join('') + '</div>' +
     (AI_ENABLED ? '<h3>AI 增加片語</h3><p class="sub">讓 AI 為「' + esc(info[0]) + '」找出資料庫還沒有的常用片語，你勾選後才會加入；加入的片語存在本機個人資料中，程式更新不會覆蓋。</p>' +
       '<div class="row"><select id="xCount" style="width:auto"><option>5</option><option selected>10</option><option>20</option></select><button id="xGen">AI 產生新片語</button></div><div id="xOut"></div>' : '') +
     '<p class="sub">' + list.length + ' 個片語意義</p>' +
@@ -278,6 +282,8 @@ function groupView() {
     '</section>';
   $('backMap').onclick = () => { state.groupOpen = false; render(); window.scrollTo(0, 0); };
   bindPromptButtons('g', () => particlePrompt(state.group), $('gnotice'));
+  $('gUpload').onchange = async e => { const n = await saveImages(e.target.files, { group: state.group }); if (n) groupView(); };
+  document.querySelectorAll('[data-gremove]').forEach(x => x.onclick = async () => { if (confirm('確定刪除這張圖片？')) { await del('media', x.dataset.gremove); groupView(); } });
   if (AI_ENABLED) $('xGen').onclick = () => aiExpand(state.group, Number($('xCount').value));
   bindLinks();
 }
@@ -342,7 +348,7 @@ async function aiExpand(group, n) {
         for (const x of picked) await put('phrases', { ...x, id: 'ai:' + uuid(), user: true, source: 'ai', provider: state.expand.provider, model: state.expand.model, createdAt: Date.now() });
         await loadEntries();
         state.expand = null;
-        groupView();
+        await groupView();
         $('xOut').innerHTML = '<div class="banner">已加入 ' + picked.length + ' 個片語，可在下方清單、片語庫與牌卡複習中使用。</div>';
       };
     }
@@ -395,20 +401,14 @@ async function detail(id) {
     (AI_ENABLED ? '<div class="toolbar"><button id="aiExplain">AI 解說此片語</button></div><div id="aiOut"></div>' : '') +
     '<div class="columns"><section><h3>個人筆記</h3><textarea id="note" rows="5" placeholder="自己理解的空間畫面與例句">' + esc(note?.text || '') + '</textarea><button id="saveNote">儲存筆記</button>' +
     '<h3>生成教學圖片提示詞</h3><p class="sub">中國竹風 Prompt：傳到 ChatGPT 產生圖片後，再上傳回來。</p>' + promptButtons('p') + '<div id="notice" class="sub"></div></section>' +
-    '<section><h3>我的圖片（' + imgs.length + '）</h3><input id="upload" type="file" accept="image/png,image/jpeg,image/webp"><div class="grid" id="photos">' +
+    '<section><h3>我的圖片（' + imgs.length + '）</h3><input id="upload" type="file" accept="image/png,image/jpeg,image/webp" multiple><div class="grid" id="photos">' +
     imgs.map(m => '<div><img class="thumb" src="' + URL.createObjectURL(m.blob) + '" alt="個人記憶圖"><button class="secondary" data-remove="' + esc(m.id) + '">刪除此圖片</button></div>').join('') + '</div></section></div>' +
     (arts.length ? '<h3>使用此片語的文章</h3>' + arts.map(a => '<div class="list-row"><span>' + esc(a.title) + '</span><button class="secondary" data-article="' + esc(a.id) + '">閱讀</button></div>').join('') : '') +
     (p.user ? '<div class="toolbar"><button class="secondary" id="deleteEntry">刪除個人片語（連同筆記與圖片）</button></div>' : '') + '</article>';
   $('back').onclick = render;
   $('saveNote').onclick = async () => { await put('notes', { id, text: $('note').value, updatedAt: Date.now() }); $('notice').textContent = '筆記已儲存'; };
   bindPromptButtons('p', () => imagePrompt(p), $('notice'));
-  $('upload').onchange = async e => {
-    const f = e.target.files[0];
-    if (!f) return;
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) || f.size > 8 * 1024 * 1024) { alert('僅允許 PNG/JPEG/WebP 且小於 8MB'); return; }
-    await put('media', { id: uuid(), phraseId: id, name: f.name, blob: f, createdAt: Date.now() });
-    detail(id);
-  };
+  $('upload').onchange = async e => { const n = await saveImages(e.target.files, { phraseId: id, group: p.group }); if (n) detail(id); };
   document.querySelectorAll('[data-remove]').forEach(x => x.onclick = async () => { if (confirm('確定刪除這張圖片？')) { await del('media', x.dataset.remove); detail(id); } });
   document.querySelectorAll('[data-article]').forEach(x => x.onclick = () => readArticle(x.dataset.article));
   if (p.user) $('deleteEntry').onclick = async () => {
@@ -558,11 +558,40 @@ async function answer(ok, p, advance) {
   if (advance) { quiz.index++; quizView(); }
 }
 
+// 圖片只存在本機並綁定到你上傳的位置，不呼叫 AI
+async function saveImages(files, target) {
+  let n = 0;
+  const bad = [];
+  for (const f of [...(files || [])]) {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type) || f.size > 8 * 1024 * 1024) { bad.push(f.name); continue; }
+    await put('media', { id: uuid(), phraseId: target.phraseId || null, group: target.group, name: f.name, blob: f, createdAt: Date.now() });
+    n++;
+  }
+  if (bad.length) alert('以下檔案未上傳（僅允許 PNG／JPEG／WebP 且小於 8MB）：' + bad.join('、'));
+  return n;
+}
+const mediaGroup = m => m.group || (findEntry(m.phraseId) || {}).group || '未分類';
 async function imagesView() {
-  const imgs = await all('media'), notes = await all('notes');
-  $('view').innerHTML = '<h2>個人記憶圖與筆記</h2><p class="sub">圖片保存在此裝置的 IndexedDB，而不是程式檔案中；更新程式不會清除。清除網站／App 資料或換裝置仍會遺失，請定期匯出備份。</p>' +
-    '<div class="banner">共 ' + imgs.length + ' 張圖片、' + notes.length + ' 筆筆記。進入片語頁面上傳圖片。</div><div class="grid" style="margin-top:14px">' +
-    imgs.map(m => { const p = findEntry(m.phraseId); return '<article class="panel"><img class="thumb" src="' + URL.createObjectURL(m.blob) + '" alt="' + esc(m.name) + '"><h3>' + esc(p?.phrase || '未找到片語') + '</h3><button class="secondary" data-open="' + esc(m.phraseId) + '">查看</button></article>'; }).join('') + '</div>';
+  const imgs = await all('media'), notes = (await all('notes')).filter(n => (n.text || '').trim());
+  const noteGroup = n => (findEntry(n.id) || {}).group || '未分類';
+  const groups = [...GROUPS.map(g => g[0]), '未分類'].filter(g => imgs.some(m => mediaGroup(m) === g) || notes.some(n => noteGroup(n) === g));
+  const filter = state.imgGroup && groups.includes(state.imgGroup) ? state.imgGroup : '';
+  const shown = filter ? [filter] : groups;
+  $('view').innerHTML = '<h2>個人記憶圖與筆記</h2><p class="sub">依 17 個小詞分類。圖片存在此裝置，綁定在你上傳的小詞或片語，不經過 AI；更新程式不會清除，換裝置前請先備份。</p>' +
+    '<div class="row between"><div class="banner">共 ' + imgs.length + ' 張圖片、' + notes.length + ' 筆筆記</div><select id="imgGroup" style="width:auto"><option value="">全部小詞</option>' + groups.map(g => '<option' + (g === filter ? ' selected' : '') + '>' + esc(g) + '</option>').join('') + '</select></div>' +
+    (groups.length ? '' : '<p class="sub" style="margin-top:14px">還沒有圖片或筆記。到「意象地圖」點小詞即可上傳小詞意象圖，或進入片語頁上傳片語圖片。</p>') +
+    shown.map(g => {
+      const gi = imgs.filter(m => mediaGroup(m) === g);
+      const particle = gi.filter(m => !m.phraseId), phrase = gi.filter(m => m.phraseId);
+      const gn = notes.filter(n => noteGroup(n) === g);
+      return '<section class="panel" style="margin-top:14px"><div class="row between"><h2 style="margin:0">' + esc(g) + ' <span class="sub">（' + gi.length + ' 張圖、' + gn.length + ' 筆筆記）</span></h2>' + (g !== '未分類' ? '<button class="secondary" data-opengroup="' + esc(g) + '">前往小詞頁</button>' : '') + '</div>' +
+        (particle.length ? '<h3>小詞意象圖（' + particle.length + '）</h3><div class="grid">' + particle.map(m => '<div><img class="thumb" src="' + URL.createObjectURL(m.blob) + '" alt="' + esc(g) + ' 意象圖"></div>').join('') + '</div>' : '') +
+        (phrase.length ? '<h3>片語圖片（' + phrase.length + '）</h3><div class="grid">' + phrase.map(m => { const p = findEntry(m.phraseId); return '<div><img class="thumb" src="' + URL.createObjectURL(m.blob) + '" alt="' + esc(p?.phrase || '') + '"><div class="row between"><b>' + esc(p?.phrase || '未找到片語') + '</b>' + (p ? '<button class="secondary" data-open="' + esc(p.id) + '">查看</button>' : '') + '</div></div>'; }).join('') + '</div>' : '') +
+        (gn.length ? '<h3>筆記（' + gn.length + '）</h3>' + gn.map(n => { const p = findEntry(n.id); return '<div class="list-row"><div><b>' + esc(p?.phrase || '') + '</b>　' + esc(p?.zh || '') + '<div class="sub">' + esc(String(n.text).slice(0, 80)) + (String(n.text).length > 80 ? '…' : '') + '</div></div>' + (p ? '<button class="secondary" data-open="' + esc(p.id) + '">查看</button>' : '') + '</div>'; }).join('') : '') +
+        '</section>';
+    }).join('');
+  $('imgGroup').onchange = e => { state.imgGroup = e.target.value; imagesView(); };
+  document.querySelectorAll('[data-opengroup]').forEach(x => x.onclick = () => { state.group = x.dataset.opengroup; state.groupOpen = true; state.tab = 'map'; render(); window.scrollTo(0, 0); });
   bindLinks();
 }
 
