@@ -82,6 +82,8 @@ const NATIVE_MOCK = () => {
   assert(!navs.includes('ai') && !navs.includes('articles'), '網頁版不顯示 AI 功能');
   await p.click('[data-group="ABOUT"]');
   assert(await p.isVisible('text=比較課：ABOUT 與 (A)ROUND'), 'ABOUT 頁面顯示比較課說明');
+  await p.click('#backMap');
+  assert((await p.$$('[data-group]')).length === 17, '「← 17 個小詞」回到入口');
   await p.click('text=片語庫');
   assert((await p.textContent('#view')).includes('共 300 個片語意義'), '片語庫 300 筆');
   await p.fill('#search', 'run out');
@@ -137,6 +139,10 @@ const NATIVE_MOCK = () => {
   await p.evaluate(() => detail('seed:up/give-up')); await p.waitForSelector('#note');
   assert(await p.inputValue('#note') === 'keep me' && (await p.$$('img.thumb')).length >= 1, '備份 → 清空 → 匯入後完整還原');
   await p.setViewportSize({ width: 375, height: 800 }); await p.click('#back');
+  await p.click('[data-tab="map"]'); await p.evaluate(() => window.scrollTo(0, 400));
+  await p.click('[data-group="INTO"]'); await p.waitForTimeout(200);
+  const top = await p.evaluate(() => [...document.querySelectorAll('h2')].find(h => h.textContent.startsWith('INTO')).getBoundingClientRect().top);
+  assert(top >= 0 && top < 800, '手機上點小詞卡片後，片語列表直接出現在畫面中');
   assert(await p.evaluate(() => document.documentElement.scrollWidth) <= 375, '手機寬度沒有水平捲動');
   await ctx.close();
 
